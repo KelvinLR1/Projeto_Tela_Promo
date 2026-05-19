@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - Signage Supermercado</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 40px;
+            z-index: 2;
+        }
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* GLASSMORPHISM CARD */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(251, 192, 45, 0.3);
+            box-shadow: 0 20px 50px rgba(251, 192, 45, 0.05);
+        }
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #fbc02d, #ff9800, #f44336);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #fbc02d;
+        }
+        .form-group {
+            margin-bottom: 22px;
+            position: relative;
+        }
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #b0bec5;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        input:focus, textarea:focus {
+            border-color: #fbc02d;
+            box-shadow: 0 0 15px rgba(251, 192, 45, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* PREMIUM SELECT (PADRÃO DO SISTEMA) */
+        .premium-select-container {
+            position: relative;
+            width: 100%;
+        }
+        .premium-select-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+            user-select: none;
+        }
+        .premium-select-trigger:hover {
+            border-color: rgba(251, 192, 45, 0.5);
+        }
+        .premium-select-trigger.active {
+            border-color: #fbc02d;
+            box-shadow: 0 0 15px rgba(251, 192, 45, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .trigger-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            overflow: hidden;
+        }
+        .select-label {
+            color: #fff;
+            font-size: 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chevron-icon {
+            color: #b0bec5;
+            transition: transform 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+        .premium-select-trigger.active .chevron-icon {
+            transform: rotate(180deg);
+        }
+        .select-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: rgba(18, 27, 39, 0.96);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 8px;
+            z-index: 2000;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            animation: slideDown 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .option-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #fff;
+            font-size: 0.95rem;
+        }
+        .option-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(4px);
+        }
+        .option-item.selected {
+            background: rgba(251, 192, 45, 0.15);
+            color: #fbc02d;
+            font-weight: 600;
+        }
+        .option-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .check-icon {
+            color: #fbc02d;
+        }
+        .select-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+        .select-dropdown::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+
+        /* BUTTONS Styling */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        button {
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: none;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-test {
+            background: transparent;
+            border: 2px solid #00e5ff;
+            color: #00e5ff;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.05);
+        }
+        .btn-test:hover {
+            background: #00e5ff;
+            color: #090a0f;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        .btn-save {
+            background: linear-gradient(135deg, #fbc02d, #ff9800);
+            color: #090a0f;
+            box-shadow: 0 4px 15px rgba(251, 192, 45, 0.3);
+        }
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(251, 192, 45, 0.5);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+
+        /* QUICK LINKS PANEL */
+        .links-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .link-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        .link-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .link-info h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .link-info p {
+            font-size: 0.8rem;
+            color: #90a4ae;
+        }
+        .link-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .action-btn {
+            padding: 8px 14px;
+            font-size: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .action-btn:hover {
+            background: #fff;
+            color: #090a0f;
+            border-color: #fff;
+        }
+        .action-btn.open-btn {
+            background: rgba(251, 192, 45, 0.1);
+            border-color: #fbc02d;
+            color: #fbc02d;
+        }
+        .action-btn.open-btn:hover {
+            background: #fbc02d;
+            color: #090a0f;
+        }
+        /* NOTIFICATIONS TOAST */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            background: #333;
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateY(150px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast-success {
+            background: #2e7d32;
+            border-left: 6px solid #4caf50;
+        }
+        .toast-error {
+            background: #c62828;
+            border-left: 6px solid #ef5350;
+        }
+        .toast-info {
+            background: #1565c0;
+            border-left: 6px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- FORM DE CONFIGURAÇÃO -->
+        <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h1 style="margin-bottom: 0;">Configurar Conexão</h1>
+                <button type="button" id="btnLogout" style="padding: 8px 16px; font-size: 0.85rem; width: auto; margin-top: 0; background: rgba(244, 67, 54, 0.15); border: 1px solid #f44336; color: #f44336; box-shadow: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase;">Sair</button>
+            </div>
+            <form id="configForm">
+                
+                <!-- CUSTOM SELECT COMPLIANT WITH SYSTEM STANDARD -->
+                <div class="form-group">
+                    <label for="dbType">Banco de Dados</label>
+                    <div class="premium-select-container" id="dbTypeContainer">
+                        <div class="premium-select-trigger" id="dbTypeTrigger">
+                            <div class="trigger-content">
+                                <span class="select-label" id="dbTypeLabel">MySQL</span>
+                            </div>
+                            <div class="chevron-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            </div>
+                        </div>
+                        <div class="select-dropdown" id="dbTypeDropdown">
+                            <div class="options-list">
+                                <div class="option-item selected" data-value="mysql">
+                                    <div class="option-content">
+                                        <span>MySQL</span>
+                                    </div>
+                                    <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                </div>
+                                <div class="option-item" data-value="postgres">
+                                    <div class="option-content">
+                                        <span>PostgreSQL</span>
+                                    </div>
+                                    <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><path d="M20 6 9 17l-5-5"/></svg>
+                                </div>
+                                <div class="option-item" data-value="sqlserver">
+                                    <div class="option-content">
+                                        <span>Microsoft SQL Server</span>
+                                    </div>
+                                    <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><path d="M20 6 9 17l-5-5"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Campo oculto para o formulário ler o valor -->
+                        <input type="hidden" id="dbType" value="mysql">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="host">Servidor (Host IP)</label>
+                    <input type="text" id="host" required placeholder="ex: 127.0.0.1 ou 192.168.1.100">
+                </div>
+
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <label for="port">Porta</label>
+                        <input type="number" id="port" required placeholder="ex: 3306">
+                    </div>
+                    <div>
+                        <label for="database">Nome do Banco</label>
+                        <input type="text" id="database" required placeholder="ex: supermercado_db">
+                    </div>
+                </div>
+
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <label for="user">Usuário</label>
+                        <input type="text" id="user" required placeholder="ex: root">
+                    </div>
+                    <div>
+                        <label for="password">Senha</label>
+                        <input type="password" id="password" placeholder="Senha do banco">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="dbQuery">Consulta SQL Personalizada (Opcional)</label>
+                    <textarea id="dbQuery" placeholder="SELECT nome_produto, preco_anterior, preco_atual, link_imagem, data_validade FROM ..." style="min-height: 120px; resize: vertical;"></textarea>
+                    <p style="font-size: 0.75rem; color: #b0bec5; margin-top: 6px; line-height: 1.4;">
+                        Deixe em branco para usar a consulta padrão do banco selecionado. Se preenchido, a consulta deve retornar as colunas: 
+                        <strong style="color: #fbc02d;">nome_produto</strong>, 
+                        <strong style="color: #fbc02d;">preco_atual</strong>, 
+                        <strong style="color: #fbc02d;">preco_anterior</strong> (opcional), 
+                        <strong style="color: #fbc02d;">link_imagem</strong> (opcional) e 
+                        <strong style="color: #fbc02d;">data_validade</strong> (formato YYYY-MM-DD).
+                    </p>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn-test" id="btnTest">Testar Conexão</button>
+                    <button type="submit" class="btn-save">Salvar Configurações</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ACESSO RÁPIDO AOS MODOS -->
+        <div class="glass-card">
+            <h1>Canais de Exibição</h1>
+            <p style="color: #b0bec5; font-size: 0.95rem; margin-bottom: 25px;">Selecione o modo de layout para abrir na TV ou copie o link para configurar no navegador da TV (Kiosk Mode).</p>
+            
+            <div class="links-panel">
+                <div class="link-card">
+                    <div class="link-info">
+                        <h3>Modo Padrão</h3>
+                        <p>Grid elegante com 4 ofertas</p>
+                    </div>
+                    <div class="link-actions">
+                        <button class="action-btn" onclick="copyLink('padrao')">Copiar</button>
+                        <button class="action-btn open-btn" onclick="openLink('padrao')">Abrir</button>
+                    </div>
+                </div>
+
+                <div class="link-card">
+                    <div class="link-info">
+                        <h3>Modo Destaque</h3>
+                        <p>1 super oferta gigante por vez</p>
+                    </div>
+                    <div class="link-actions">
+                        <button class="action-btn" onclick="copyLink('destaque')">Copiar</button>
+                        <button class="action-btn open-btn" onclick="openLink('destaque')">Abrir</button>
+                    </div>
+                </div>
+
+                <div class="link-card">
+                    <div class="link-info">
+                        <h3>Modo Compacto</h3>
+                        <p>Grid denso de 6 ofertas por página</p>
+                    </div>
+                    <div class="link-actions">
+                        <button class="action-btn" onclick="copyLink('compacto')">Copiar</button>
+                        <button class="action-btn open-btn" onclick="openLink('compacto')">Abrir</button>
+                    </div>
+                </div>
+
+                <div class="link-card">
+                    <div class="link-info">
+                        <h3>Modo Vitrine</h3>
+                        <p>Lista lateral + super card rotativo</p>
+                    </div>
+                    <div class="link-actions">
+                        <button class="action-btn" onclick="copyLink('vitrine')">Copiar</button>
+                        <button class="action-btn open-btn" onclick="openLink('vitrine')">Abrir</button>
+                    </div>
+                </div>
+
+                <div class="link-card">
+                    <div class="link-info">
+                        <h3>Sem Foto (Grade)</h3>
+                        <p>Grade tipográfica de ofertas sem imagens</p>
+                    </div>
+                    <div class="link-actions">
+                        <button class="action-btn" onclick="copyLink('sem-foto')">Copiar</button>
+                        <button class="action-btn open-btn" onclick="openLink('sem-foto')">Abrir</button>
+                    </div>
+                </div>
+
+                <div class="link-card">
+                    <div class="link-info">
+                        <h3>Sem Foto (Destaque)</h3>
+                        <p>1 oferta gigante de alto impacto sem imagem</p>
+                    </div>
+                    <div class="link-actions">
+                        <button class="action-btn" onclick="copyLink('sem-foto-destaque')">Copiar</button>
+                        <button class="action-btn open-btn" onclick="openLink('sem-foto-destaque')">Abrir</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast">Info message</div>
+
+    <script>
+        const hostUrl = window.location.origin;
+
+        // Custom Select Logic (PremiumSelect padrão do sistema)
+        const trigger = document.getElementById('dbTypeTrigger');
+        const dropdown = document.getElementById('dbTypeDropdown');
+        const dbTypeInput = document.getElementById('dbType');
+        const label = document.getElementById('dbTypeLabel');
+        const options = dropdown.querySelectorAll('.option-item');
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = dropdown.style.display === 'block';
+            if (isOpen) {
+                dropdown.style.display = 'none';
+                trigger.classList.remove('active');
+            } else {
+                dropdown.style.display = 'block';
+                trigger.classList.add('active');
+            }
+        });
+
+        // Fecha ao clicar fora
+        document.addEventListener('click', () => {
+            dropdown.style.display = 'none';
+            trigger.classList.remove('active');
+        });
+
+        options.forEach(opt => {
+            opt.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const val = opt.getAttribute('data-value');
+                
+                // Remove selected de todos e adiciona no clicado
+                options.forEach(o => {
+                    o.classList.remove('selected');
+                    o.querySelector('.check-icon').style.display = 'none';
+                });
+                opt.classList.add('selected');
+                opt.querySelector('.check-icon').style.display = 'block';
+                
+                // Atualiza label e input
+                label.innerText = opt.querySelector('span').innerText;
+                dbTypeInput.value = val;
+                
+                // Dispara evento change
+                const event = new Event('change');
+                dbTypeInput.dispatchEvent(event);
+
+                // Fecha
+                dropdown.style.display = 'none';
+                trigger.classList.remove('active');
+            });
+        });
+
+        // Auto-detecta porta padrão com base no banco selecionado
+        dbTypeInput.addEventListener('change', (e) => {
+            const portInput = document.getElementById('port');
+            if (e.target.value === 'mysql') portInput.value = '3306';
+            else if (e.target.value === 'postgres') portInput.value = '5432';
+            else if (e.target.value === 'sqlserver') portInput.value = '1433';
+        });
+
+        // Carrega configurações atuais do servidor
+        async function loadCurrentConfig() {
+            try {
+                const response = await fetch('/api/config/current');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Atualiza o input e o custom UI
+                    dbTypeInput.value = data.dbType;
+                    
+                    // Acha a opção correspondente e a seleciona na UI
+                    const selectedOpt = dropdown.querySelector(`[data-value="${data.dbType}"]`);
+                    if (selectedOpt) {
+                        options.forEach(o => {
+                            o.classList.remove('selected');
+                            o.querySelector('.check-icon').style.display = 'none';
+                        });
+                        selectedOpt.classList.add('selected');
+                        selectedOpt.querySelector('.check-icon').style.display = 'block';
+                        label.innerText = selectedOpt.querySelector('span').innerText;
+                    }
+
+                    document.getElementById('host').value = data.host;
+                    document.getElementById('port').value = data.port;
+                    document.getElementById('database').value = data.database;
+                    document.getElementById('user').value = data.user;
+                    document.getElementById('password').value = data.password;
+                    document.getElementById('dbQuery').value = data.dbQuery || '';
+                }
+            } catch (err) {
+                showToast('Erro ao carregar configurações existentes.', 'error');
+            }
+        }
+
+        // Testar conexão
+        document.getElementById('btnTest').addEventListener('click', async () => {
+            const payload = getFormData();
+            showToast('Testando conexão com o banco de dados...', 'info');
+            
+            try {
+                const response = await fetch('/api/config/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Sucesso! O banco de dados respondeu perfeitamente.', 'success');
+                } else {
+                    showToast('Falha na conexão: ' + result.error, 'error');
+                }
+            } catch (err) {
+                showToast('Erro ao enviar requisição de teste.', 'error');
+            }
+        });
+
+        // Salvar configurações
+        document.getElementById('configForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = getFormData();
+            showToast('Salvando e inicializando banco...', 'info');
+            
+            try {
+                const response = await fetch('/api/config/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Configurações salvas e aplicadas em tempo real!', 'success');
+                } else {
+                    showToast('Erro ao salvar: ' + result.error, 'error');
+                }
+            } catch (err) {
+                showToast('Erro ao salvar as configurações.', 'error');
+            }
+        });
+
+        function getFormData() {
+            return {
+                dbType: dbTypeInput.value,
+                host: document.getElementById('host').value,
+                port: document.getElementById('port').value,
+                database: document.getElementById('database').value,
+                user: document.getElementById('user').value,
+                password: document.getElementById('password').value,
+                dbQuery: document.getElementById('dbQuery').value
+            };
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.className = 'toast show ' + 'toast-' + type;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // Lógica de links
+        function copyLink(layout) {
+            const link = layout === 'padrao' ? hostUrl : `${hostUrl}/?layout=${layout}`;
+            navigator.clipboard.writeText(link).then(() => {
+                showToast('Link copiado para a área de transferência!', 'success');
+            }).catch(() => {
+                showToast('Erro ao copiar link.', 'error');
+            });
+        }
+
+        function openLink(layout) {
+            const link = layout === 'padrao' ? hostUrl : `${hostUrl}/?layout=${layout}`;
+            window.open(link, '_blank');
+        }
+
+        // Lógica de logout
+        document.getElementById('btnLogout').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/logout', { method: 'POST' });
+                if (response.ok) {
+                    window.location.href = '/login';
+                }
+            } catch (err) {
+                showToast('Erro ao encerrar a sessão.', 'error');
+            }
+        });
+
+        // Inicializa
+        loadCurrentConfig();
+    </script>
+</body>
+</html>
