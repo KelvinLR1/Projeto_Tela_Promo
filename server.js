@@ -10,6 +10,7 @@ const PORT = process.env.PORT || 3000;
 const SESSION_COOKIE_NAME = 'admin_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 2;
 const SESSION_SECRET = process.env.SESSION_SECRET || process.env.ADMIN_PASS || 'dev-session-secret';
+const VALID_LAYOUTS = ['padrao', 'destaque', 'compacto', 'vitrine', 'sem-foto', 'sem-foto-destaque'];
 
 if (!process.env.SESSION_SECRET) {
   console.warn('[AUTH] SESSION_SECRET nao definido. Configure uma chave forte no .env antes de usar em producao.');
@@ -106,6 +107,39 @@ function buildSessionCookie(value, req, maxAge = SESSION_TTL_SECONDS) {
 }
 
 // Middleware de Autenticação baseada em Cookie (HttpOnly)
+function clampNumber(value, fallback, min, max) {
+  const parsed = parseInt(value, 10);
+  if (Number.isNaN(parsed)) return fallback;
+  return Math.min(Math.max(parsed, min), max);
+}
+
+function sanitizeColor(value, fallback) {
+  const color = String(value || '').trim();
+  return /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback;
+}
+
+function getDisplayConfig() {
+  const defaultLayout = VALID_LAYOUTS.includes(process.env.DISPLAY_DEFAULT_LAYOUT)
+    ? process.env.DISPLAY_DEFAULT_LAYOUT
+    : 'padrao';
+
+  return {
+    title: process.env.DISPLAY_TITLE || 'OFERTAS IMPERDIVEIS',
+    footerText: process.env.DISPLAY_FOOTER_TEXT || 'Aproveite! Promocoes validas enquanto durarem os estoques.',
+    defaultLayout,
+    fetchInterval: clampNumber(process.env.DISPLAY_FETCH_INTERVAL, 30000, 5000, 300000),
+    carouselInterval: clampNumber(process.env.DISPLAY_CAROUSEL_INTERVAL, 10000, 3000, 120000),
+    vitrineItemInterval: clampNumber(process.env.DISPLAY_VITRINE_ITEM_INTERVAL, 6000, 3000, 120000),
+    itemsPadrao: clampNumber(process.env.DISPLAY_ITEMS_PADRAO, 4, 1, 8),
+    itemsCompacto: clampNumber(process.env.DISPLAY_ITEMS_COMPACTO, 6, 1, 12),
+    itemsVitrine: clampNumber(process.env.DISPLAY_ITEMS_VITRINE, 5, 1, 10),
+    itemsSemFoto: clampNumber(process.env.DISPLAY_ITEMS_SEM_FOTO, 4, 1, 8),
+    primaryColor: sanitizeColor(process.env.DISPLAY_PRIMARY_COLOR, '#d32f2f'),
+    accentColor: sanitizeColor(process.env.DISPLAY_ACCENT_COLOR, '#fbc02d'),
+    backgroundColor: sanitizeColor(process.env.DISPLAY_BACKGROUND_COLOR, '#111111')
+  };
+}
+
 function cookieAuth(req, res, next) {
   const cookies = parseCookies(req);
 
@@ -123,6 +157,10 @@ function cookieAuth(req, res, next) {
 }
 
 // Serve os arquivos estáticos da pasta public (Frontend)
+app.get('/display', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'display.html'));
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Gerenciador de conexão dinâmico para múltiplos bancos de dados
@@ -334,6 +372,14 @@ app.get('/api/config/current', cookieAuth, (req, res) => {
   });
 });
 
+app.get('/api/display-config', (req, res) => {
+  res.json(getDisplayConfig());
+});
+
+app.get('/api/config/display', cookieAuth, (req, res) => {
+  res.json(getDisplayConfig());
+});
+
 // Rota para testar conexão com o banco de dados temporariamente antes de salvar
 app.post('/api/config/test', cookieAuth, async (req, res) => {
   const { dbType, host, port, database, user, password, dbQuery } = req.body;
@@ -397,28 +443,58 @@ app.post('/api/config/test', cookieAuth, async (req, res) => {
 
 // Salva as novas configurações no .env e atualiza as conexões em tempo de execução
 const fs = require('fs');
+
+function envLine(key, value) {
+  const raw = String(value ?? '');
+  if (/^[A-Za-z0-9_./:@-]*$/.test(raw)) {
+    return `${key}=${raw}`;
+  }
+  return `${key}=${JSON.stringify(raw)}`;
+}
+
+function buildEnvContent() {
+  return [
+    '# Tipo de Banco de Dados: mysql, postgres, sqlserver',
+    envLine('DB_TYPE', process.env.DB_TYPE || 'mysql'),
+    envLine('DB_HOST', process.env.DB_HOST || '127.0.0.1'),
+    envLine('DB_PORT', process.env.DB_PORT || '3306'),
+    envLine('DB_USER', process.env.DB_USER || 'root'),
+    envLine('DB_PASSWORD', process.env.DB_PASSWORD || ''),
+    envLine('DB_NAME', process.env.DB_NAME || 'supermercado_db'),
+    envLine('DB_QUERY', process.env.DB_QUERY || ''),
+    envLine('PORT', PORT),
+    envLine('ADMIN_USER', process.env.ADMIN_USER || 'admin'),
+    envLine('ADMIN_PASS', process.env.ADMIN_PASS || 'admin123'),
+    envLine('SESSION_SECRET', SESSION_SECRET),
+    envLine('ALLOWED_ORIGINS', process.env.ALLOWED_ORIGINS || ''),
+    '',
+    '# Configuracoes visuais da tela',
+    envLine('DISPLAY_TITLE', process.env.DISPLAY_TITLE || 'OFERTAS IMPERDIVEIS'),
+    envLine('DISPLAY_FOOTER_TEXT', process.env.DISPLAY_FOOTER_TEXT || 'Aproveite! Promocoes validas enquanto durarem os estoques.'),
+    envLine('DISPLAY_DEFAULT_LAYOUT', process.env.DISPLAY_DEFAULT_LAYOUT || 'padrao'),
+    envLine('DISPLAY_FETCH_INTERVAL', process.env.DISPLAY_FETCH_INTERVAL || '30000'),
+    envLine('DISPLAY_CAROUSEL_INTERVAL', process.env.DISPLAY_CAROUSEL_INTERVAL || '10000'),
+    envLine('DISPLAY_VITRINE_ITEM_INTERVAL', process.env.DISPLAY_VITRINE_ITEM_INTERVAL || '6000'),
+    envLine('DISPLAY_ITEMS_PADRAO', process.env.DISPLAY_ITEMS_PADRAO || '4'),
+    envLine('DISPLAY_ITEMS_COMPACTO', process.env.DISPLAY_ITEMS_COMPACTO || '6'),
+    envLine('DISPLAY_ITEMS_VITRINE', process.env.DISPLAY_ITEMS_VITRINE || '5'),
+    envLine('DISPLAY_ITEMS_SEM_FOTO', process.env.DISPLAY_ITEMS_SEM_FOTO || '4'),
+    envLine('DISPLAY_PRIMARY_COLOR', process.env.DISPLAY_PRIMARY_COLOR || '#d32f2f'),
+    envLine('DISPLAY_ACCENT_COLOR', process.env.DISPLAY_ACCENT_COLOR || '#fbc02d'),
+    envLine('DISPLAY_BACKGROUND_COLOR', process.env.DISPLAY_BACKGROUND_COLOR || '#111111'),
+    ''
+  ].join('\n');
+}
+
+function saveEnvFile() {
+  const envPath = path.join(__dirname, '.env');
+  fs.writeFileSync(envPath, buildEnvContent());
+}
+
 app.post('/api/config/save', cookieAuth, async (req, res) => {
   const { dbType, host, port, database, user, password, dbQuery } = req.body;
   const cleanedQuery = (dbQuery || '').replace(/\r?\n/g, ' ').trim();
   try {
-    // Atualiza o arquivo .env
-    const envPath = path.join(__dirname, '.env');
-    const envContent = `# Tipo de Banco de Dados: mysql, postgres, sqlserver
-DB_TYPE=${dbType}
-DB_HOST=${host}
-DB_PORT=${port}
-DB_USER=${user}
-DB_PASSWORD=${password}
-DB_NAME=${database}
-DB_QUERY=${cleanedQuery}
-PORT=${PORT}
-ADMIN_USER=${process.env.ADMIN_USER || 'admin'}
-ADMIN_PASS=${process.env.ADMIN_PASS || 'admin123'}
-SESSION_SECRET=${SESSION_SECRET}
-ALLOWED_ORIGINS=${process.env.ALLOWED_ORIGINS || ''}
-`;
-    fs.writeFileSync(envPath, envContent);
-
     // Atualiza em tempo de execução
     process.env.DB_TYPE = dbType;
     process.env.DB_HOST = host;
@@ -427,6 +503,7 @@ ALLOWED_ORIGINS=${process.env.ALLOWED_ORIGINS || ''}
     process.env.DB_PASSWORD = password;
     process.env.DB_NAME = database;
     process.env.DB_QUERY = cleanedQuery;
+    saveEnvFile();
 
     // Derruba o pool antigo para recriar com a nova configuração na próxima requisição
     if (dbPool) {
@@ -444,6 +521,45 @@ ALLOWED_ORIGINS=${process.env.ALLOWED_ORIGINS || ''}
     }
 
     res.json({ success: true, message: 'Configuração atualizada com sucesso!' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/config/display/save', cookieAuth, (req, res) => {
+  try {
+    const {
+      title,
+      footerText,
+      defaultLayout,
+      fetchInterval,
+      carouselInterval,
+      vitrineItemInterval,
+      itemsPadrao,
+      itemsCompacto,
+      itemsVitrine,
+      itemsSemFoto,
+      primaryColor,
+      accentColor,
+      backgroundColor
+    } = req.body;
+
+    process.env.DISPLAY_TITLE = String(title || 'OFERTAS IMPERDIVEIS').trim();
+    process.env.DISPLAY_FOOTER_TEXT = String(footerText || 'Aproveite! Promocoes validas enquanto durarem os estoques.').trim();
+    process.env.DISPLAY_DEFAULT_LAYOUT = VALID_LAYOUTS.includes(defaultLayout) ? defaultLayout : 'padrao';
+    process.env.DISPLAY_FETCH_INTERVAL = String(clampNumber(fetchInterval, 30000, 5000, 300000));
+    process.env.DISPLAY_CAROUSEL_INTERVAL = String(clampNumber(carouselInterval, 10000, 3000, 120000));
+    process.env.DISPLAY_VITRINE_ITEM_INTERVAL = String(clampNumber(vitrineItemInterval, 6000, 3000, 120000));
+    process.env.DISPLAY_ITEMS_PADRAO = String(clampNumber(itemsPadrao, 4, 1, 8));
+    process.env.DISPLAY_ITEMS_COMPACTO = String(clampNumber(itemsCompacto, 6, 1, 12));
+    process.env.DISPLAY_ITEMS_VITRINE = String(clampNumber(itemsVitrine, 5, 1, 10));
+    process.env.DISPLAY_ITEMS_SEM_FOTO = String(clampNumber(itemsSemFoto, 4, 1, 8));
+    process.env.DISPLAY_PRIMARY_COLOR = sanitizeColor(primaryColor, '#d32f2f');
+    process.env.DISPLAY_ACCENT_COLOR = sanitizeColor(accentColor, '#fbc02d');
+    process.env.DISPLAY_BACKGROUND_COLOR = sanitizeColor(backgroundColor, '#111111');
+
+    saveEnvFile();
+    res.json({ success: true, message: 'Configuracoes visuais salvas!', config: getDisplayConfig() });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

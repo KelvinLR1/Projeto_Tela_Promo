@@ -1,11 +1,16 @@
-const API_URL = '/api/promocoes';
-const FETCH_INTERVAL = 30000; // 30 segundos para buscar no banco
-const CAROUSEL_INTERVAL = 10000; // 10 segundos por página no carrossel normal
-const VITRINE_ITEM_INTERVAL = 6000; // 6 segundos por item no modo vitrine
+﻿const API_URL = '/api/promocoes';
+const DISPLAY_CONFIG_URL = '/api/display-config';
+const DISPLAY_CONFIG_REFRESH_INTERVAL = 5000;
+let fetchInterval = 30000;
+let carouselInterval = 10000;
+let vitrineItemInterval = 6000;
+let displayConfig = null;
+let displayConfigSnapshot = '';
 
-// Configuração de Layout dinâmico via URL
+// Configuracao de layout dinamico via URL
 const urlParams = new URLSearchParams(window.location.search);
-const layoutMode = urlParams.get('layout') || 'padrao';
+const requestedLayout = urlParams.get('layout');
+let layoutMode = requestedLayout || 'padrao';
 
 let itemsPerPage = 4;
 if (layoutMode === 'destaque') {
@@ -15,7 +20,7 @@ if (layoutMode === 'destaque') {
     itemsPerPage = 6;
     document.body.classList.add('layout-compacto');
 } else if (layoutMode === 'vitrine') {
-    itemsPerPage = 5; // A lista da esquerda terá até 5 itens por vez
+    itemsPerPage = 5;
     document.body.classList.add('layout-vitrine');
 } else if (layoutMode === 'sem-foto') {
     itemsPerPage = 4;
@@ -30,15 +35,122 @@ if (layoutMode === 'destaque') {
 let allPromotions = [];
 let currentPage = 0;
 let carouselTimer = null;
+let fetchTimer = null;
+let configTimer = null;
 let vitrineActiveIndex = 0; // Para o layout vitrine
 let lastFetchFailed = false;
 
 const carouselContainer = document.getElementById('carousel-container');
 const template = document.getElementById('product-template');
 
+async function fetchDisplayConfig(isInitialLoad = false) {
+    try {
+        const response = await fetch(DISPLAY_CONFIG_URL);
+        if (!response.ok) throw new Error('Erro ao carregar configuracao visual');
+        const nextConfig = await response.json();
+        const nextSnapshot = JSON.stringify(nextConfig);
+
+        if (!isInitialLoad && nextSnapshot === displayConfigSnapshot) {
+            return false;
+        }
+
+        const previousState = {
+            layoutMode,
+            itemsPerPage,
+            fetchInterval,
+            carouselInterval,
+            vitrineItemInterval
+        };
+
+        displayConfig = nextConfig;
+        displayConfigSnapshot = nextSnapshot;
+        applyDisplayConfig(displayConfig);
+
+        if (!isInitialLoad) {
+            applyLiveConfigChange(previousState);
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Falha ao carregar configuracao visual:', error);
+        if (isInitialLoad) {
+            displayConfig = {};
+            applyDisplayConfig(displayConfig);
+        }
+        return false;
+    }
+}
+
+function applyDisplayConfig(config) {
+    const title = document.querySelector('.header h1');
+    const footer = document.querySelector('.footer p');
+
+    if (title) title.textContent = config.title || 'OFERTAS IMPERDIVEIS';
+    if (footer) footer.textContent = config.footerText || 'Aproveite! Promocoes validas enquanto durarem os estoques.';
+
+    fetchInterval = Number(config.fetchInterval) || fetchInterval;
+    carouselInterval = Number(config.carouselInterval) || carouselInterval;
+    vitrineItemInterval = Number(config.vitrineItemInterval) || vitrineItemInterval;
+
+    document.documentElement.style.setProperty('--promo-primary', config.primaryColor || '#d32f2f');
+    document.documentElement.style.setProperty('--promo-accent', config.accentColor || '#fbc02d');
+    document.documentElement.style.setProperty('--promo-background', config.backgroundColor || '#111111');
+
+    applyLayout(requestedLayout || config.defaultLayout || 'padrao');
+}
+
+function applyLayout(mode) {
+    layoutMode = ['padrao', 'destaque', 'compacto', 'vitrine', 'sem-foto', 'sem-foto-destaque'].includes(mode) ? mode : 'padrao';
+    document.body.classList.remove('layout-padrao', 'layout-destaque', 'layout-compacto', 'layout-vitrine', 'layout-sem-foto', 'layout-sem-foto-destaque');
+    document.body.classList.add(`layout-${layoutMode}`);
+
+    if (layoutMode === 'destaque' || layoutMode === 'sem-foto-destaque') {
+        itemsPerPage = 1;
+    } else if (layoutMode === 'compacto') {
+        itemsPerPage = Number(displayConfig?.itemsCompacto) || 6;
+    } else if (layoutMode === 'vitrine') {
+        itemsPerPage = Number(displayConfig?.itemsVitrine) || 5;
+    } else if (layoutMode === 'sem-foto') {
+        itemsPerPage = Number(displayConfig?.itemsSemFoto) || 4;
+    } else {
+        itemsPerPage = Number(displayConfig?.itemsPadrao) || 4;
+    }
+}
+
 async function init() {
+    await fetchDisplayConfig(true);
     await fetchPromotions();
-    setInterval(fetchPromotions, FETCH_INTERVAL);
+    schedulePromotionFetch();
+    scheduleDisplayConfigFetch();
+}
+
+function schedulePromotionFetch() {
+    if (fetchTimer) clearInterval(fetchTimer);
+    fetchTimer = setInterval(fetchPromotions, fetchInterval);
+}
+
+function scheduleDisplayConfigFetch() {
+    if (configTimer) clearInterval(configTimer);
+    configTimer = setInterval(() => fetchDisplayConfig(false), DISPLAY_CONFIG_REFRESH_INTERVAL);
+}
+
+function applyLiveConfigChange(previousState) {
+    const fetchTimingChanged = previousState.fetchInterval !== fetchInterval;
+    const presentationChanged =
+        previousState.layoutMode !== layoutMode ||
+        previousState.itemsPerPage !== itemsPerPage ||
+        previousState.carouselInterval !== carouselInterval ||
+        previousState.vitrineItemInterval !== vitrineItemInterval;
+
+    if (fetchTimingChanged) {
+        schedulePromotionFetch();
+    }
+
+    if (presentationChanged) {
+        currentPage = 0;
+        vitrineActiveIndex = 0;
+        updateCarousel();
+    }
 }
 
 async function fetchPromotions() {
@@ -60,7 +172,7 @@ async function fetchPromotions() {
             renderCurrentPage();
         }
     } catch (error) {
-        console.error('Falha ao buscar promoções:', error);
+        console.error('Falha ao buscar promocoes:', error);
         lastFetchFailed = true;
         if (allPromotions.length === 0) {
             renderCurrentPage();
@@ -74,6 +186,17 @@ function formatCurrency(value) {
     return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+function normalizeText(value) {
+    const text = String(value || '').trim();
+    if (!/[ÃÂâ]/.test(text)) return text;
+
+    try {
+        return decodeURIComponent(escape(text));
+    } catch (err) {
+        return text;
+    }
+}
+
 function normalizePromotion(item) {
     if (!item || typeof item !== 'object') return null;
 
@@ -82,12 +205,12 @@ function normalizePromotion(item) {
     return {
         ...item,
         id: item.id ?? cryptoRandomId(),
-        nome_produto: String(item.nome_produto || item.nome || 'Produto em oferta').trim(),
+        nome_produto: normalizeText(item.nome_produto || item.nome || 'Produto em oferta'),
         preco_anterior: item.preco_anterior ?? null,
         preco_atual: isNaN(currentPrice) ? 0 : currentPrice,
         link_imagem: String(item.link_imagem || '').trim(),
         data_validade: String(item.data_validade || '').trim(),
-        texto_validade: String(item.texto_validade || '').trim()
+        texto_validade: normalizeText(item.texto_validade || '')
     };
 }
 
@@ -192,11 +315,11 @@ function updateCarousel() {
 
     if (layoutMode === 'vitrine') {
         if (allPromotions.length > 1) {
-            carouselTimer = setInterval(nextVitrineItem, VITRINE_ITEM_INTERVAL);
+            carouselTimer = setInterval(nextVitrineItem, vitrineItemInterval);
         }
     } else {
         if (allPromotions.length > itemsPerPage) {
-            carouselTimer = setInterval(nextPage, CAROUSEL_INTERVAL);
+            carouselTimer = setInterval(nextPage, carouselInterval);
         }
     }
 }
@@ -215,20 +338,17 @@ function renderCurrentPage() {
             }
             carouselContainer.classList.remove('fade-out');
             return;
-            carouselContainer.innerHTML = '<h2 style="color: #fff; font-size: 5vh;">Nenhuma promoção ativa no momento.</h2>';
-            carouselContainer.classList.remove('fade-out');
-            return;
         }
 
         const startIndex = (currentPage * itemsPerPage) % allPromotions.length;
         const itemsToShow = [];
         
         if (allPromotions.length <= itemsPerPage) {
-            // Se tivermos menos itens que o limite da página, mostramos todos
+            // Se tivermos menos itens que o limite da pagina, mostramos todos
             itemsToShow.push(...allPromotions);
         } else {
             // Se tivermos mais itens, garantimos que a tela sempre fique CHEIA
-            // pegando os próximos itens do array circular
+            // pegando os proximos itens do array circular
             for (let i = 0; i < itemsPerPage; i++) {
                 const itemIndex = (startIndex + i) % allPromotions.length;
                 itemsToShow.push(allPromotions[itemIndex]);
@@ -245,7 +365,7 @@ function renderCurrentPage() {
     }, 800);
 }
 
-// Renderiza layouts padrão, destaque e compacto
+// Renderiza layouts padrao, destaque e compacto
 function renderGrid(itemsToShow) {
     itemsToShow.forEach(item => {
         const clone = template.content.cloneNode(true);
@@ -300,7 +420,7 @@ function renderVitrine(itemsToShow) {
     sidebar.className = 'vitrine-sidebar';
     
     const highlightArea = document.createElement('div');
-    highlightArea.className = 'vitrine-highlight fade-in-element'; // classe p/ animação
+    highlightArea.className = 'vitrine-highlight fade-in-element';
     
     carouselContainer.appendChild(sidebar);
     carouselContainer.appendChild(highlightArea);
@@ -328,7 +448,7 @@ function renderVitrine(itemsToShow) {
         sidebar.appendChild(listItem);
     });
 
-    // Atualiza a área de destaque com o item ativo
+    // Atualiza a area de destaque com o item ativo
     updateVitrineHighlight(itemsToShow[vitrineActiveIndex], highlightArea);
 }
 
@@ -388,49 +508,9 @@ function updateVitrineHighlight(item, container) {
     container.classList.remove('fade-in-element');
     void container.offsetWidth;
     container.classList.add('fade-in-element');
-    return;
-
-    let imgHtml = '';
-    if (item.link_imagem && item.link_imagem.trim() !== '') {
-        imgHtml = `<img src="${item.link_imagem}" alt="Produto" class="product-image">`;
-    } else {
-        imgHtml = `<div class="no-image-placeholder"></div>`;
-    }
-
-    let oldPriceHtml = '';
-    if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
-        oldPriceHtml = `<span class="old-price">${formatCurrency(item.preco_anterior)}</span>`;
-    }
-
-    const valText = getValidityBadgeText(item);
-    let validityHtml = '';
-    if (valText) {
-        validityHtml = `<span class="validity-badge" style="display: inline-block;">${valText}</span>`;
-    }
-
-    container.innerHTML = `
-        <div class="product-card large-vitrine-card">
-            <div class="product-image-wrapper">
-                ${imgHtml}
-            </div>
-            <div class="product-info">
-                <h2 class="product-name">${item.nome_produto}</h2>
-                ${validityHtml}
-                <div class="prices">
-                    ${oldPriceHtml}
-                    <span class="new-price">${formatCurrency(item.preco_atual)}</span>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Força uma animação
-    container.classList.remove('fade-in-element');
-    void container.offsetWidth; // trigger reflow
-    container.classList.add('fade-in-element');
 }
 
-// Lógica de avanço para Vitrine
+// Logica de avanco para Vitrine
 function nextVitrineItem() {
     const startIndex = (currentPage * itemsPerPage) % allPromotions.length;
     const itemsToShow = [];
@@ -447,11 +527,11 @@ function nextVitrineItem() {
     vitrineActiveIndex++;
     
     if (vitrineActiveIndex >= itemsToShow.length) {
-        // Acabou a página atual, avança para a próxima página de 5 itens
+        // Acabou a pagina atual, avanca para a proxima pagina de 5 itens
         vitrineActiveIndex = 0;
         nextPage();
     } else {
-        // Apenas atualiza a seleção na tela (sem dar fade na tela toda)
+        // Apenas atualiza a selecao na tela (sem dar fade na tela toda)
         const sidebarItems = document.querySelectorAll('.vitrine-list-item');
         sidebarItems.forEach((el, idx) => {
             if (idx === vitrineActiveIndex) el.classList.add('active');
@@ -477,3 +557,4 @@ function nextPage() {
 }
 
 init();
+

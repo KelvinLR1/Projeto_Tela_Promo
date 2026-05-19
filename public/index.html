@@ -3,46 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ofertas do Dia</title>
-    <!-- Fonte Google para um visual mais moderno -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <title>Selecionar Visualizacao</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="selector.css">
 </head>
 <body>
-    <div class="main-container">
-        <!-- Header da Tela -->
-        <header class="header">
-            <h1 class="blink-text">OFERTAS IMPERDÍVEIS</h1>
+    <main class="selector-shell">
+        <header class="selector-header">
+            <div>
+                <p class="eyebrow">Tela promocional</p>
+                <h1>Escolha o visual desta tela</h1>
+                <p>Selecione um modo para abrir as ofertas neste navegador. Use configuracoes para ajustar conexao, cores e intervalos.</p>
+            </div>
+            <a class="config-link" href="/config">Configuracoes</a>
         </header>
 
-        <!-- Container do Carrossel onde os produtos serão injetados -->
-        <div id="carousel-container" class="carousel-container">
-            <!-- Os produtos aparecerão aqui via JavaScript -->
-        </div>
-
-        <!-- Footer da Tela -->
-        <footer class="footer">
-            <p>Aproveite! Promoções válidas enquanto durarem os estoques.</p>
-        </footer>
-    </div>
-
-    <!-- Template base para um item de produto (escondido) -->
-    <template id="product-template">
-        <div class="product-card">
-            <div class="product-image-wrapper">
-                <img src="" alt="Produto" class="product-image">
-            </div>
-            <div class="product-info">
-                <h2 class="product-name">Nome do Produto</h2>
-                <span class="validity-badge" style="display: none;"></span>
-                <div class="prices">
-                    <span class="old-price">R$ 0,00</span>
-                    <span class="new-price">R$ 0,00</span>
-                </div>
-            </div>
-        </div>
-    </template>
-
-    <script src="script.js"></script>
+        <section class="layout-grid" aria-label="Modos de visualizacao">
+            <a class="layout-option featured" href="/display?layout=padrao">
+                <span class="layout-kicker">Recomendado</span>
+                <strong>Modo Padrao</strong>
+                <span>Grid equilibrado para exibicao geral de ofertas.</span>
+            </a>
+            <a class="layout-option" href="/display?layout=destaque">
+                <strong>Modo Destaque</strong>
+                <span>Uma oferta grande por vez para alto impacto.</span>
+            </a>
+            <a class="layout-option" href="/display?layout=compacto">
+                <strong>Modo Compacto</strong>
+                <span>Mais produtos na tela, ideal para listas maiores.</span>
+            </a>
+            <a class="layout-option" href="/display?layout=vitrine">
+                <strong>Modo Vitrine</strong>
+                <span>Lista lateral com uma oferta principal em rotacao.</span>
+            </a>
+            <a class="layout-option" href="/display?layout=sem-foto">
+                <strong>Sem Foto (Grade)</strong>
+                <span>Visual tipografico para bases sem imagens.</span>
+            </a>
+            <a class="layout-option" href="/display?layout=sem-foto-destaque">
+                <strong>Sem Foto (Destaque)</strong>
+                <span>Uma oferta gigante sem depender de foto.</span>
+            </a>
+        </section>
+    </main>
 </body>
 </html>

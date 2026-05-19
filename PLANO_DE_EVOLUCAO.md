@@ -42,6 +42,8 @@ Criterio de conclusao: nenhum layout quebra com dados comuns de supermercado.
 
 Objetivo: permitir ajustes sem mexer no codigo.
 
+Status: implementado na primeira passada com persistencia no `.env` e leitura publica pela tela.
+
 - Titulo da tela.
 - Texto do rodape.
 - Layout padrao.
