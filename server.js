@@ -7,6 +7,10 @@ const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const PUBLIC_DIR = path.join(__dirname, 'public');
+const ADMIN_DIR = path.join(PUBLIC_DIR, 'admin');
+const DISPLAY_DIR = path.join(PUBLIC_DIR, 'display');
+const IMAGES_DIR = path.join(PUBLIC_DIR, 'imagens');
 const SESSION_COOKIE_NAME = 'admin_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 2;
 const SESSION_SECRET = process.env.SESSION_SECRET || process.env.ADMIN_PASS || 'dev-session-secret';
@@ -124,6 +128,7 @@ function getDisplayConfig() {
     : 'padrao';
 
   return {
+    localImagesPath: process.env.LOCAL_IMAGES_PATH || '',
     title: process.env.DISPLAY_TITLE || 'OFERTAS IMPERDIVEIS',
     footerText: process.env.DISPLAY_FOOTER_TEXT || 'Aproveite! Promocoes validas enquanto durarem os estoques.',
     defaultLayout,
@@ -156,12 +161,35 @@ function cookieAuth(req, res, next) {
   res.redirect('/login');
 }
 
-// Serve os arquivos estáticos da pasta public (Frontend)
-app.get('/display', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'display.html'));
+// Serve os arquivos estaticos da tela publica e do painel admin.
+app.get('/', (req, res) => {
+  res.sendFile(path.join(DISPLAY_DIR, 'index.html'));
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.get('/display', (req, res) => {
+  res.sendFile(path.join(DISPLAY_DIR, 'display.html'));
+});
+
+app.use('/admin', express.static(ADMIN_DIR));
+app.use(express.static(DISPLAY_DIR));
+
+// Serve imagens locais dinamicamente
+// Se LOCAL_IMAGES_PATH for atualizada em tempo de execução, reflete na hora sem precisar reiniciar o servidor!
+const fsSync = require('fs');
+if (!fsSync.existsSync(IMAGES_DIR)) {
+  fsSync.mkdirSync(IMAGES_DIR, { recursive: true });
+}
+
+app.use('/imagens', (req, res, next) => {
+  let targetDir = IMAGES_DIR;
+  if (process.env.LOCAL_IMAGES_PATH) {
+    const customPath = path.resolve(process.env.LOCAL_IMAGES_PATH);
+    if (fsSync.existsSync(customPath)) {
+      targetDir = customPath;
+    }
+  }
+  express.static(targetDir)(req, res, next);
+});
 
 // Gerenciador de conexão dinâmico para múltiplos bancos de dados
 let dbPool = null;
@@ -211,7 +239,6 @@ async function getDbConnection() {
         password: process.env.DB_PASSWORD,
         server: process.env.DB_HOST,
         database: process.env.DB_NAME,
-        port: parseInt(process.env.DB_PORT) || 1433,
         options: {
           encrypt: process.env.DB_ENCRYPT === 'true', // Usar true para Azure SQL
           trustServerCertificate: true // Necessário para conexões locais/desenvolvimento
@@ -222,6 +249,11 @@ async function getDbConnection() {
           idleTimeoutMillis: 30000
         }
       };
+      if (process.env.DB_INSTANCE) {
+        config.options.instanceName = process.env.DB_INSTANCE;
+      } else {
+        config.port = parseInt(process.env.DB_PORT) || 1433;
+      }
       dbPool = await mssql.connect(config);
       console.log('◇ [DB] Conexão SQL Server inicializada com sucesso!');
     } else {
@@ -234,6 +266,63 @@ async function getDbConnection() {
   }
 
   return dbPool;
+}
+
+// Helper para processar resultados e converter caminhos absolutos locais, formatar datas e sanitizar preços
+function processProductRows(rows) {
+  if (!Array.isArray(rows)) return [];
+  return rows.map(r => {
+    // 1. Tratamento do link de imagem
+    let link = r.link_imagem || '';
+    if (link && (path.isAbsolute(link) || /^[a-zA-Z]:[\\\/]/.test(link))) {
+      link = `/api/local-image?path=${encodeURIComponent(link)}`;
+    }
+
+    // 2. Tratamento seguro de preços (pode vir como número, string com vírgula/ponto, ou null)
+    let precoAtual = 0;
+    if (r.preco_atual !== undefined && r.preco_atual !== null) {
+      if (typeof r.preco_atual === 'number') {
+        precoAtual = r.preco_atual;
+      } else {
+        precoAtual = parseFloat(String(r.preco_atual).replace(',', '.'));
+        if (Number.isNaN(precoAtual)) precoAtual = 0;
+      }
+    }
+
+    let precoAnterior = null;
+    if (r.preco_anterior !== undefined && r.preco_anterior !== null && String(r.preco_anterior).trim() !== '') {
+      if (typeof r.preco_anterior === 'number') {
+        precoAnterior = r.preco_anterior;
+      } else {
+        precoAnterior = parseFloat(String(r.preco_anterior).replace(',', '.'));
+        if (Number.isNaN(precoAnterior)) precoAnterior = null;
+      }
+    }
+
+    // 3. Formatação segura de datas (data_validade, data_inicio, data_fim)
+    const formatDate = (dateVal) => {
+      if (!dateVal) return null;
+      if (dateVal instanceof Date) {
+        return dateVal.toISOString().split('T')[0];
+      }
+      const str = String(dateVal).trim();
+      const match = str.match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
+      if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+      const matchBR = str.match(/^(\d{2})[-/](\d{2})[-/](\d{4})/);
+      if (matchBR) return `${matchBR[3]}-${matchBR[2]}-${matchBR[1]}`;
+      return str;
+    };
+
+    return {
+      ...r,
+      link_imagem: link,
+      preco_atual: precoAtual,
+      preco_anterior: precoAnterior,
+      data_validade: formatDate(r.data_validade),
+      data_inicio: r.data_inicio !== undefined ? formatDate(r.data_inicio) : undefined,
+      data_fim: r.data_fim !== undefined ? formatDate(r.data_fim) : undefined
+    };
+  });
 }
 
 // Rota da API para buscar as promoções
@@ -254,7 +343,7 @@ app.get('/api/promocoes', async (req, res) => {
             WHERE data_validade >= CURDATE()
           `;
           const [rows] = await conn.query(queryToRun);
-          return res.json(rows);
+          return res.json(processProductRows(rows));
         } 
         
         else if (dbType === 'postgres' || dbType === 'postgresql') {
@@ -264,13 +353,7 @@ app.get('/api/promocoes', async (req, res) => {
             WHERE data_validade >= CURRENT_DATE
           `;
           const { rows } = await conn.query(queryToRun);
-          // O Postgres retorna campos decimais como Strings. Convertemos para floats.
-          const parsedRows = rows.map(r => ({
-            ...r,
-            preco_anterior: r.preco_anterior ? parseFloat(r.preco_anterior) : null,
-            preco_atual: r.preco_atual ? parseFloat(r.preco_atual) : 0
-          }));
-          return res.json(parsedRows);
+          return res.json(processProductRows(rows));
         } 
         
         else if (dbType === 'mssql' || dbType === 'sqlserver') {
@@ -280,13 +363,7 @@ app.get('/api/promocoes', async (req, res) => {
             WHERE data_validade >= CAST(GETDATE() AS DATE)
           `;
           const result = await conn.request().query(queryToRun);
-          // O SQL Server também pode requerer conversão decimal dependendo da coluna
-          const parsedRows = result.recordset.map(r => ({
-            ...r,
-            preco_anterior: r.preco_anterior ? parseFloat(r.preco_anterior) : null,
-            preco_atual: r.preco_atual ? parseFloat(r.preco_atual) : 0
-          }));
-          return res.json(parsedRows);
+          return res.json(processProductRows(result.recordset));
         }
       } catch (dbErr) {
         console.error('◇ [API] Falha ao consultar banco de dados:', dbErr.message);
@@ -300,6 +377,9 @@ app.get('/api/promocoes', async (req, res) => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const nextWeekStr = nextWeek.toISOString().split('T')[0];
 
     // Retorna 16 produtos falsos (MOCK) se o banco não estiver configurado ou falhar
     const mockProdutos = [
@@ -320,6 +400,13 @@ app.get('/api/promocoes', async (req, res) => {
       { id: 15, nome_produto: "Sabonete em Barra 90g Fragrâncias", preco_anterior: 2.80, preco_atual: 1.99, link_imagem: "https://loremflickr.com/400/400/soap,bar/all", data_validade: "2026-12-31" },
       { id: 16, nome_produto: "Creme Dental Tripla Ação 90g", preco_anterior: 4.50, preco_atual: 3.29, link_imagem: "https://loremflickr.com/400/400/toothpaste/all", data_validade: "2026-12-31" }
     ];
+    mockProdutos.unshift(
+      { id: 101, nome_produto: "Arroz Branco Tipo 1 5kg Premium", preco_anterior: 25.90, preco_atual: 19.99, link_imagem: "https://loremflickr.com/400/400/rice,package/all", data_inicio: todayStr, data_fim: nextWeekStr },
+      { id: 102, nome_produto: "Feijao Carioca 1kg", preco_anterior: 8.50, preco_atual: 5.99, link_imagem: "", data_inicio: todayStr, data_fim: nextWeekStr, dias_semana: "1,3" },
+      { id: 103, nome_produto: "Oleo de Soja 900ml", preco_anterior: null, preco_atual: 5.49, link_imagem: "https://loremflickr.com/400/400/oil,bottle/all", data_inicio: todayStr, data_fim: todayStr, hora_inicio: "08:00", hora_fim: "10:00" },
+      { id: 104, nome_produto: "Cafe Torrado e Moido 500g", preco_anterior: 18.90, preco_atual: 14.50, link_imagem: "https://loremflickr.com/400/400/coffee,bag/all", data_inicio: todayStr, data_fim: nextWeekStr, dias_semana: "1,3,5", hora_inicio: "08:00", hora_fim: "10:00" }
+    );
+
     res.json(mockProdutos);
 
   } catch (error) {
@@ -328,9 +415,37 @@ app.get('/api/promocoes', async (req, res) => {
   }
 });
 
+// Endpoint seguro para servir imagens locais de qualquer pasta do servidor
+app.get('/api/local-image', (req, res) => {
+  const filePath = req.query.path;
+  if (!filePath) {
+    return res.status(400).send('Caminho do arquivo não fornecido.');
+  }
+
+  try {
+    const resolvedPath = path.resolve(filePath);
+    
+    // Verifica se o arquivo existe fisicamente no servidor
+    if (!fsSync.existsSync(resolvedPath)) {
+      return res.status(404).send('Imagem não encontrada no servidor.');
+    }
+
+    // Extensões de imagem permitidas (segurança básica)
+    const allowedExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp'];
+    const ext = path.extname(resolvedPath).toLowerCase();
+    if (!allowedExtensions.includes(ext)) {
+      return res.status(403).send('Formato de arquivo não permitido.');
+    }
+
+    res.sendFile(resolvedPath);
+  } catch (err) {
+    res.status(500).send('Erro interno ao servir a imagem.');
+  }
+});
+
 // Rota para a tela de login customizada
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'login.html'));
+  res.sendFile(path.join(ADMIN_DIR, 'login.html'));
 });
 
 // Endpoint de login (Gera o cookie HttpOnly de sessão)
@@ -356,7 +471,7 @@ app.post('/api/logout', (req, res) => {
 
 // Rota para abrir a página de configuração de forma mais amigável
 app.get('/config', cookieAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'config.html'));
+  res.sendFile(path.join(ADMIN_DIR, 'config.html'));
 });
 
 // Retorna as configurações atuais do arquivo .env
@@ -368,7 +483,8 @@ app.get('/api/config/current', cookieAuth, (req, res) => {
     database: process.env.DB_NAME || 'supermercado_db',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD === 'sua_senha_aqui' ? '' : process.env.DB_PASSWORD,
-    dbQuery: process.env.DB_QUERY || ''
+    dbQuery: process.env.DB_QUERY || '',
+    dbInstance: process.env.DB_INSTANCE || ''
   });
 });
 
@@ -382,7 +498,7 @@ app.get('/api/config/display', cookieAuth, (req, res) => {
 
 // Rota para testar conexão com o banco de dados temporariamente antes de salvar
 app.post('/api/config/test', cookieAuth, async (req, res) => {
-  const { dbType, host, port, database, user, password, dbQuery } = req.body;
+  const { dbType, host, port, database, user, password, dbQuery, dbInstance } = req.body;
   const cleanedQuery = (dbQuery || '').replace(/\r?\n/g, ' ').trim();
   try {
     if (dbType === 'mysql') {
@@ -423,10 +539,14 @@ app.post('/api/config/test', cookieAuth, async (req, res) => {
         password,
         server: host,
         database,
-        port: parseInt(port) || 1433,
         options: { encrypt: false, trustServerCertificate: true },
         connectionTimeout: 3000
       };
+      if (dbInstance) {
+        config.options.instanceName = dbInstance;
+      } else {
+        config.port = parseInt(port) || 1433;
+      }
       const conn = await mssql.connect(config);
       if (cleanedQuery) {
         await conn.request().query(cleanedQuery);
@@ -458,6 +578,7 @@ function buildEnvContent() {
     envLine('DB_TYPE', process.env.DB_TYPE || 'mysql'),
     envLine('DB_HOST', process.env.DB_HOST || '127.0.0.1'),
     envLine('DB_PORT', process.env.DB_PORT || '3306'),
+    envLine('DB_INSTANCE', process.env.DB_INSTANCE || ''),
     envLine('DB_USER', process.env.DB_USER || 'root'),
     envLine('DB_PASSWORD', process.env.DB_PASSWORD || ''),
     envLine('DB_NAME', process.env.DB_NAME || 'supermercado_db'),
@@ -469,6 +590,7 @@ function buildEnvContent() {
     envLine('ALLOWED_ORIGINS', process.env.ALLOWED_ORIGINS || ''),
     '',
     '# Configuracoes visuais da tela',
+    envLine('LOCAL_IMAGES_PATH', process.env.LOCAL_IMAGES_PATH || ''),
     envLine('DISPLAY_TITLE', process.env.DISPLAY_TITLE || 'OFERTAS IMPERDIVEIS'),
     envLine('DISPLAY_FOOTER_TEXT', process.env.DISPLAY_FOOTER_TEXT || 'Aproveite! Promocoes validas enquanto durarem os estoques.'),
     envLine('DISPLAY_DEFAULT_LAYOUT', process.env.DISPLAY_DEFAULT_LAYOUT || 'padrao'),
@@ -492,13 +614,14 @@ function saveEnvFile() {
 }
 
 app.post('/api/config/save', cookieAuth, async (req, res) => {
-  const { dbType, host, port, database, user, password, dbQuery } = req.body;
+  const { dbType, host, port, dbInstance, database, user, password, dbQuery } = req.body;
   const cleanedQuery = (dbQuery || '').replace(/\r?\n/g, ' ').trim();
   try {
     // Atualiza em tempo de execução
     process.env.DB_TYPE = dbType;
     process.env.DB_HOST = host;
     process.env.DB_PORT = port;
+    process.env.DB_INSTANCE = String(dbInstance || '').trim();
     process.env.DB_USER = user;
     process.env.DB_PASSWORD = password;
     process.env.DB_NAME = database;
@@ -529,6 +652,7 @@ app.post('/api/config/save', cookieAuth, async (req, res) => {
 app.post('/api/config/display/save', cookieAuth, (req, res) => {
   try {
     const {
+      localImagesPath,
       title,
       footerText,
       defaultLayout,
@@ -543,6 +667,8 @@ app.post('/api/config/display/save', cookieAuth, (req, res) => {
       accentColor,
       backgroundColor
     } = req.body;
+
+    process.env.LOCAL_IMAGES_PATH = String(localImagesPath || '').trim();
 
     process.env.DISPLAY_TITLE = String(title || 'OFERTAS IMPERDIVEIS').trim();
     process.env.DISPLAY_FOOTER_TEXT = String(footerText || 'Aproveite! Promocoes validas enquanto durarem os estoques.').trim();

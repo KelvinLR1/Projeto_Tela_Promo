@@ -25,6 +25,7 @@ const fields = {
     dbType: document.getElementById('dbType'),
     host: document.getElementById('host'),
     port: document.getElementById('port'),
+    dbInstance: document.getElementById('dbInstance'),
     database: document.getElementById('database'),
     user: document.getElementById('user'),
     password: document.getElementById('password'),
@@ -41,7 +42,8 @@ const fields = {
     displayItemsSemFoto: document.getElementById('displayItemsSemFoto'),
     displayPrimaryColor: document.getElementById('displayPrimaryColor'),
     displayAccentColor: document.getElementById('displayAccentColor'),
-    displayBackgroundColor: document.getElementById('displayBackgroundColor')
+    displayBackgroundColor: document.getElementById('displayBackgroundColor'),
+    localImagesPath: document.getElementById('localImagesPath')
 };
 
 function initLayoutOptions() {
@@ -115,6 +117,7 @@ function getFormData() {
         dbType: fields.dbType.value,
         host: fields.host.value,
         port: fields.port.value,
+        dbInstance: fields.dbInstance.value,
         database: fields.database.value,
         user: fields.user.value,
         password: fields.password.value,
@@ -136,13 +139,16 @@ function getDisplayFormData() {
         itemsSemFoto: fields.displayItemsSemFoto.value,
         primaryColor: fields.displayPrimaryColor.value,
         accentColor: fields.displayAccentColor.value,
-        backgroundColor: fields.displayBackgroundColor.value
+        backgroundColor: fields.displayBackgroundColor.value,
+        localImagesPath: fields.localImagesPath.value
     };
 }
 
 function applyDbDefaults() {
     const defaults = { mysql: '3306', postgres: '5432', sqlserver: '1433' };
     fields.port.value = defaults[fields.dbType.value] || fields.port.value;
+    const isSqlServer = fields.dbType.value === 'sqlserver';
+    document.getElementById('instanceField').style.display = isSqlServer ? '' : 'none';
     updateSummary();
 }
 
@@ -155,10 +161,14 @@ async function loadCurrentConfig() {
         fields.dbType.value = data.dbType || 'mysql';
         fields.host.value = data.host || '';
         fields.port.value = data.port || '';
+        fields.dbInstance.value = data.dbInstance || '';
         fields.database.value = data.database || '';
         fields.user.value = data.user || '';
         fields.password.value = data.password || '';
         fields.dbQuery.value = data.dbQuery || '';
+        // Mostra/oculta campo de instância conforme o tipo de banco carregado
+        const isSqlServer = (data.dbType || 'mysql') === 'sqlserver';
+        document.getElementById('instanceField').style.display = isSqlServer ? '' : 'none';
         updateSummary();
     } catch (err) {
         showToast('Erro ao carregar configuracoes de conexao.', 'error');
@@ -184,6 +194,7 @@ async function loadDisplayConfig() {
         fields.displayPrimaryColor.value = data.primaryColor || '#d32f2f';
         fields.displayAccentColor.value = data.accentColor || '#fbc02d';
         fields.displayBackgroundColor.value = data.backgroundColor || '#111111';
+        fields.localImagesPath.value = data.localImagesPath || '';
         updateSummary();
     } catch (err) {
         showToast('Erro ao carregar visual da tela.', 'error');

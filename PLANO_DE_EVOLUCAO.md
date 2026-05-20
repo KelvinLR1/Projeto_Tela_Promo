@@ -18,6 +18,8 @@ Criterio de conclusao: login continua funcionando, `/config` exige sessao valida
 
 Objetivo: garantir que a tela consiga consumir dados reais sem ajustes manuais de ultima hora.
 
+Status: implementado com sanitizador e parser de banco defensivo (trata floats, strings, vírgulas, datas em múltiplos formatos, converte caminhos absolutos locais de imagens no servidor de qualquer partição/pasta em tempo real).
+
 - Confirmar a query final da tabela de promocoes.
 - Padronizar colunas esperadas: `id`, `nome_produto`, `preco_anterior`, `preco_atual`, `link_imagem`, `data_validade` e opcionalmente `texto_validade`.
 - Testar produtos sem imagem, sem preco anterior e com nomes longos.
@@ -56,6 +58,8 @@ Criterio de conclusao: o usuario altera configuracoes no painel e a tela aplica 
 ## 5. Organizacao e manutencao
 
 Objetivo: deixar o projeto mais facil de evoluir.
+
+Status: implementado com README, `.env.example`, pastas separadas para admin/tela publica, login com CSS/JS externos e scripts de manutencao.
 
 - Criar `README.md`.
 - Criar `.env.example`.

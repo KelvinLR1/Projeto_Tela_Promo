@@ -1,11 +1,13 @@
 {
   "name": "projeto_tela_promo",
   "version": "1.0.0",
-  "description": "",
+  "description": "Tela promocional para exibicao de ofertas com painel administrativo.",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "check": "node --check server.js",
+    "verify": "npm run check"
   },
   "keywords": [],
   "author": "",

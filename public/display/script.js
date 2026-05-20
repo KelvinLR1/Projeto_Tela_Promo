@@ -210,6 +210,11 @@ function normalizePromotion(item) {
         preco_atual: isNaN(currentPrice) ? 0 : currentPrice,
         link_imagem: String(item.link_imagem || '').trim(),
         data_validade: String(item.data_validade || '').trim(),
+        data_inicio: String(item.data_inicio || '').trim(),
+        data_fim: String(item.data_fim || item.data_validade || '').trim(),
+        dias_semana: item.dias_semana || '',
+        hora_inicio: String(item.hora_inicio || '').trim(),
+        hora_fim: String(item.hora_fim || '').trim(),
         texto_validade: normalizeText(item.texto_validade || '')
     };
 }
@@ -274,9 +279,18 @@ function renderStatusMessage(title, detail) {
 }
 
 function getValidityBadgeText(item) {
-    if (item.texto_validade && item.texto_validade.trim() !== '') {
-        return item.texto_validade.trim().toUpperCase();
-    }
+    return getValidityBadgeParts(item).map(part => part.value).join(' - ');
+}
+
+function getValidityBadgeParts(item) {
+    const customText = item.texto_validade && item.texto_validade.trim() !== ''
+        ? item.texto_validade.trim().toUpperCase()
+        : '';
+
+    if (customText) return [{ type: 'text', label: 'OFERTA', value: customText }];
+
+    const scheduleParts = getScheduleBadgeParts(item);
+    if (scheduleParts.length > 0) return scheduleParts;
 
     if (item.data_validade) {
         try {
@@ -292,20 +306,159 @@ function getValidityBadgeText(item) {
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays === 0) {
-                return "SÓ HOJE!";
+                return [{ type: 'date', label: 'VALIDADE', value: 'SO HOJE' }];
             } else if (diffDays === 1) {
-                return "ATÉ AMANHÃ!";
+                return [{ type: 'date', label: 'VALIDADE', value: 'ATE AMANHA' }];
             } else if (diffDays > 1 && diffDays <= 7) {
                 const diasSemana = ["DOMINGO", "SEGUNDA-FEIRA", "TERÇA-FEIRA", "QUARTA-FEIRA", "QUINTA-FEIRA", "SEXTA-FEIRA", "SÁBADO"];
-                return `ATÉ ${diasSemana[valDate.getDay()]}`;
+                return [{ type: 'date', label: 'VALIDADE', value: `ATE ${diasSemana[valDate.getDay()]}` }];
             } else if (diffDays > 7) {
-                return `ATÉ ${day}/${month}`;
+                return [{ type: 'date', label: 'VALIDADE', value: `ATE ${day}/${month}` }];
             }
         } catch (e) {
             // Ignora erro
         }
     }
-    return "";
+    return [];
+}
+
+function getScheduleBadgeParts(item) {
+    const parts = [];
+    const dateRange = formatDateRange(item.data_inicio, item.data_fim);
+    const days = formatWeekdays(item.dias_semana);
+    const timeRange = formatTimeRange(item.hora_inicio, item.hora_fim);
+    const hasOperationalRule = Boolean(days || timeRange);
+
+    if (dateRange && (!hasOperationalRule || dateRange === 'HOJE')) {
+        parts.push({ type: 'date', label: 'VALIDO', value: dateRange });
+    }
+    if (days) parts.push({ type: 'days', label: 'DIAS', value: days });
+    if (timeRange) parts.push({ type: 'time', label: 'HORARIO', value: timeRange });
+
+    return parts;
+}
+
+function formatDateRange(startDate, endDate) {
+    const start = formatDateLabel(startDate);
+    const end = formatDateLabel(endDate);
+    const startsToday = isToday(startDate);
+
+    if (start && end && start === end && startsToday) return 'HOJE';
+    if (start && end && start !== end) return `${start} A ${end}`;
+    if (start && end) return start;
+    if (end) return end;
+    if (start) return `A PARTIR DE ${start}`;
+    return '';
+}
+
+function formatDateLabel(dateValue) {
+    if (!dateValue) return '';
+    const [year, month, day] = String(dateValue).split('-');
+    if (!year || !month || !day) return '';
+    const parsed = new Date(year, month - 1, day);
+    if (isNaN(parsed.getTime())) return '';
+    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}`;
+}
+
+function formatWeekdays(value) {
+    const rawValues = Array.isArray(value) ? value : String(value || '').split(',');
+    const dayNames = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
+    const selectedDays = rawValues
+        .map(day => String(day).trim().toLowerCase())
+        .filter(Boolean)
+        .map(day => {
+            const numericDay = Number(day);
+            if (!Number.isNaN(numericDay) && numericDay >= 0 && numericDay <= 6) {
+                return dayNames[numericDay];
+            }
+            return normalizeWeekdayName(day);
+        })
+        .filter(Boolean);
+
+    if (selectedDays.length === 0 || selectedDays.length === 7) return '';
+    return selectedDays.join('/');
+}
+
+function normalizeWeekdayName(day) {
+    const names = {
+        domingo: 'DOM',
+        dom: 'DOM',
+        segunda: 'SEG',
+        seg: 'SEG',
+        terca: 'TER',
+        'terça': 'TER',
+        ter: 'TER',
+        quarta: 'QUA',
+        qua: 'QUA',
+        quinta: 'QUI',
+        qui: 'QUI',
+        sexta: 'SEX',
+        sex: 'SEX',
+        sabado: 'SAB',
+        'sábado': 'SAB',
+        sab: 'SAB'
+    };
+
+    return names[day] || '';
+}
+
+function formatTimeRange(startTime, endTime) {
+    const start = formatTimeLabel(startTime);
+    const end = formatTimeLabel(endTime);
+
+    if (start && end) return `${start} - ${end}`;
+    if (start) return `A PARTIR DAS ${start}`;
+    if (end) return `ATE ${end}`;
+    return '';
+}
+
+function formatTimeLabel(timeValue) {
+    const match = String(timeValue || '').match(/^(\d{1,2}):(\d{2})/);
+    if (!match) return '';
+    return `${match[1].padStart(2, '0')}:${match[2]}`;
+}
+
+function isToday(dateValue) {
+    if (!dateValue) return false;
+    const [year, month, day] = String(dateValue).split('-');
+    const parsed = new Date(year, month - 1, day);
+    if (isNaN(parsed.getTime())) return false;
+
+    const today = new Date();
+    return parsed.getFullYear() === today.getFullYear() &&
+        parsed.getMonth() === today.getMonth() &&
+        parsed.getDate() === today.getDate();
+}
+
+function renderValidityBadges(container, item) {
+    if (!container) return;
+
+    const parts = getValidityBadgeParts(item);
+    if (parts.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.innerHTML = '';
+    container.className = 'schedule-badges';
+    container.style.display = 'flex';
+
+    parts.forEach(part => {
+        const badge = document.createElement('span');
+        badge.className = `validity-badge validity-badge-${part.type}`;
+
+        const label = document.createElement('span');
+        label.className = 'badge-label';
+        label.textContent = part.label;
+
+        const value = document.createElement('span');
+        value.className = 'badge-value';
+        value.textContent = part.value;
+
+        badge.appendChild(label);
+        badge.appendChild(value);
+        container.appendChild(badge);
+    });
 }
 
 function updateCarousel() {
@@ -374,7 +527,9 @@ function renderGrid(itemsToShow) {
         const imgElement = clone.querySelector('.product-image');
         
         const validityText = getValidityBadgeText(item);
+        const validityParts = getValidityBadgeParts(item);
         applyTextSizing(card, item);
+        if (validityParts.length > 0) card.classList.add('has-schedule');
 
         if (layoutMode === 'sem-foto' || layoutMode === 'sem-foto-destaque') {
             if (imgWrapper) imgWrapper.remove();
@@ -387,12 +542,8 @@ function renderGrid(itemsToShow) {
         } else {
             setProductImage(imgElement, imgWrapper, item.link_imagem);
 
-            // Define o badge de validade sutil nos modos com fotos
             const validityBadgeEl = clone.querySelector('.validity-badge');
-            if (validityText && validityBadgeEl) {
-                validityBadgeEl.textContent = validityText;
-                validityBadgeEl.style.display = 'inline-block';
-            }
+            renderValidityBadges(validityBadgeEl, item);
         }
         
         clone.querySelector('.product-name').textContent = item.nome_produto;
@@ -476,14 +627,10 @@ function updateVitrineHighlight(item, container) {
     name.textContent = item.nome_produto;
     info.appendChild(name);
 
-    const valTextSafe = getValidityBadgeText(item);
-    if (valTextSafe) {
-        const validity = document.createElement('span');
-        validity.className = 'validity-badge';
-        validity.style.display = 'inline-block';
-        validity.textContent = valTextSafe;
-        info.appendChild(validity);
-    }
+    const validity = document.createElement('div');
+    renderValidityBadges(validity, item);
+    if (getValidityBadgeParts(item).length > 0) card.classList.add('has-schedule');
+    info.appendChild(validity);
 
     const prices = document.createElement('div');
     prices.className = 'prices';

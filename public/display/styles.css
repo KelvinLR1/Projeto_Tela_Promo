@@ -218,6 +218,11 @@ body {
     overflow: hidden;
 }
 
+.layout-padrao .product-card.has-schedule .product-name {
+    font-size: 3.55vh;
+    margin-bottom: 1vh;
+}
+
 /* PREÇOS */
 .prices {
     display: flex;
@@ -264,6 +269,7 @@ body {
     height: 60vh;
 }
 .large-card .product-name { font-size: 6vh; }
+.large-card.has-schedule .product-name { font-size: 5vh; margin-bottom: 1.5vh; }
 .large-card .old-price { font-size: 4vh; }
 .large-card .new-price { font-size: 10vh; }
 
@@ -325,10 +331,10 @@ body {
     padding: 1.5vh 1.5vw;
 }
 .layout-compacto .product-image-wrapper {
-    flex: 0 0 52%;
+    flex: 0 0 44%; /* Reduzido de 52% para 44% para dar mais espaço ao texto e evitar overflow */
     height: auto;  /* FIX: Sobrescreve o height: 100% que causava overflow no modo compacto! */
     width: 100%;
-    margin-bottom: 1vh;
+    margin-bottom: 0.8vh; /* Reduzido de 1vh para 0.8vh */
 }
 .layout-compacto .product-info {
     padding-left: 0;
@@ -340,6 +346,10 @@ body {
     font-size: 2.5vh; /* Reduzi um pouquinho a fonte para não empurrar os preços */
     margin-bottom: 0.5vh;
 }
+.layout-compacto .product-card.has-schedule .product-name {
+    font-size: 2.1vh; /* Reduzido para encaixar com a badge de validade */
+    margin-bottom: 0.3vh;
+}
 .layout-compacto .old-price {
     font-size: 2vh;
 }
@@ -348,6 +358,16 @@ body {
 }
 .layout-compacto .has-long-name .product-name {
     font-size: 2.1vh;
+}
+.layout-compacto .product-card.has-schedule.has-long-name .product-name {
+    font-size: 1.9vh;
+}
+.layout-compacto .has-very-long-name .product-name {
+    font-size: 1.8vh;
+    -webkit-line-clamp: 3;
+}
+.layout-compacto .product-card.has-schedule.has-very-long-name .product-name {
+    font-size: 1.7vh;
 }
 .layout-compacto .has-long-price .new-price {
     font-size: 3.8vh;
@@ -440,10 +460,10 @@ body {
 }
 
 .large-vitrine-card .product-image-wrapper {
-    flex: 0 0 55%;
+    flex: 0 0 48%; /* Reduzido de 55% para 48% para evitar overflow com nomes longos e datas */
     height: auto;
     width: 100%;
-    margin-bottom: 4vh; /* Dá um respiro entre a imagem e o texto */
+    margin-bottom: 3vh; /* Reduzido de 4vh para 3vh */
 }
 
 .large-vitrine-card .product-info {
@@ -473,6 +493,9 @@ body {
 .large-vitrine-card.has-very-long-name .product-name {
     font-size: 3.2vh;
 }
+.large-vitrine-card.has-schedule.has-very-long-name .product-name {
+    font-size: 3vh;
+}
 .large-vitrine-card.has-long-price .new-price {
     font-size: 6.8vh;
 }
@@ -488,41 +511,116 @@ body {
 }
 
 /* Pílula de Validade nos layouts normais (com fotos) */
-.validity-badge {
-    background-color: #fbc02d;
-    color: #111;
-    font-size: 2vh;
-    font-weight: 800;
-    padding: 0.4vh 1vw;
-    border-radius: 4px;
-    margin-bottom: 1vh;
+.schedule-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45vh 0.35vw;
+    margin-bottom: 0.9vh;
     align-self: flex-start;
+    max-width: 100%;
+}
+
+.validity-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 3vh;
+    overflow: hidden;
+    background: #fff4c1;
+    color: #111;
+    font-size: 1.45vh;
+    font-weight: 900;
+    border-radius: 6px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    letter-spacing: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    line-height: 1.15;
+}
+
+.badge-label {
+    align-self: stretch;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35vh 0.45vw;
+    background: #d32f2f;
+    color: #fff;
+    font-size: 1vh;
+    letter-spacing: 0.4px;
+}
+
+.badge-value {
+    padding: 0.3vh 0.55vw;
+    color: #161616;
+    white-space: nowrap;
+}
+
+.validity-badge-days .badge-label {
+    background: #2e7d32;
+}
+
+.validity-badge-time .badge-label {
+    background: #1565c0;
+}
+
+.validity-badge-text .badge-label {
+    background: #6a1b9a;
 }
 
 /* Ajustes finos de alinhamento da pílula por layout */
-.layout-compacto .validity-badge {
+.layout-compacto .schedule-badges {
     align-self: center;
-    font-size: 1.6vh;
-    padding: 0.3vh 0.8vw;
+    justify-content: center;
     margin-bottom: 0.5vh;
 }
 
-.layout-destaque .validity-badge {
-    font-size: 3vh;
-    padding: 0.6vh 1.5vw;
-    border-radius: 6px;
+.layout-compacto .validity-badge {
+    min-height: 2.6vh;
+    font-size: 1.25vh;
+}
+
+.layout-compacto .badge-label {
+    font-size: 0.9vh;
+}
+
+.layout-compacto .badge-value {
+    padding: 0.25vh 0.45vw;
+}
+
+.layout-destaque .schedule-badges {
     margin-bottom: 2vh;
 }
 
-.large-vitrine-card .validity-badge {
+.layout-destaque .validity-badge {
+    min-height: 4.8vh;
+    font-size: 2.3vh;
+    border-radius: 8px;
+}
+
+.layout-destaque .product-card.has-schedule .product-name {
+    font-size: 6.4vh;
+}
+
+.layout-destaque .badge-label {
+    font-size: 1.45vh;
+    padding: 0.55vh 0.75vw;
+}
+
+.layout-destaque .badge-value {
+    padding: 0.55vh 1vw;
+}
+
+.large-vitrine-card .schedule-badges {
     align-self: center;
-    font-size: 2.2vh;
-    padding: 0.5vh 1.2vw;
-    border-radius: 6px;
+    justify-content: center;
     margin-bottom: 1.5vh;
+}
+
+.large-vitrine-card .validity-badge {
+    min-height: 3.8vh;
+    font-size: 1.8vh;
+}
+
+.large-vitrine-card.has-schedule .product-name {
+    font-size: 4vh;
 }
 
 /* ========================================= */
@@ -543,7 +641,10 @@ body {
     border-radius: 50px;
     border: 3px solid #fbc02d;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    white-space: nowrap;
+    max-width: 90%;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.15;
     letter-spacing: 1px;
 }
 
