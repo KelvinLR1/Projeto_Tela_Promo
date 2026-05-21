@@ -1,4 +1,4 @@
-﻿const API_URL = '/api/promocoes';
+const API_URL = '/api/promocoes';
 const DISPLAY_CONFIG_URL = '/api/display-config';
 const DISPLAY_CONFIG_REFRESH_INTERVAL = 5000;
 let fetchInterval = 30000;
@@ -107,13 +107,13 @@ function applyLayout(mode) {
     if (layoutMode === 'destaque' || layoutMode === 'sem-foto-destaque') {
         itemsPerPage = 1;
     } else if (layoutMode === 'compacto') {
-        itemsPerPage = Number(displayConfig?.itemsCompacto) || 6;
+        itemsPerPage = 6;
     } else if (layoutMode === 'vitrine') {
-        itemsPerPage = Number(displayConfig?.itemsVitrine) || 5;
+        itemsPerPage = 5;
     } else if (layoutMode === 'sem-foto') {
-        itemsPerPage = Number(displayConfig?.itemsSemFoto) || 4;
+        itemsPerPage = 4;
     } else {
-        itemsPerPage = Number(displayConfig?.itemsPadrao) || 4;
+        itemsPerPage = 4;
     }
 }
 
@@ -195,8 +195,6 @@ function normalizeText(value) {
     } catch (err) {
         return text;
     }
-}
-
 function normalizePromotion(item) {
     if (!item || typeof item !== 'object') return null;
 

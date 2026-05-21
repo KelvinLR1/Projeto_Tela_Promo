@@ -32,28 +32,18 @@ const fields = {
     dbQuery: document.getElementById('dbQuery'),
     displayTitle: document.getElementById('displayTitle'),
     displayFooter: document.getElementById('displayFooter'),
-    displayDefaultLayout: document.getElementById('displayDefaultLayout'),
     displayFetchInterval: document.getElementById('displayFetchInterval'),
     displayCarouselInterval: document.getElementById('displayCarouselInterval'),
     displayVitrineInterval: document.getElementById('displayVitrineInterval'),
-    displayItemsPadrao: document.getElementById('displayItemsPadrao'),
-    displayItemsCompacto: document.getElementById('displayItemsCompacto'),
-    displayItemsVitrine: document.getElementById('displayItemsVitrine'),
-    displayItemsSemFoto: document.getElementById('displayItemsSemFoto'),
     displayPrimaryColor: document.getElementById('displayPrimaryColor'),
     displayAccentColor: document.getElementById('displayAccentColor'),
-    displayBackgroundColor: document.getElementById('displayBackgroundColor'),
-    localImagesPath: document.getElementById('localImagesPath')
+    displayBackgroundColor: document.getElementById('displayBackgroundColor')
 };
 
 function initLayoutOptions() {
-    fields.displayDefaultLayout.innerHTML = layoutOptions
-        .map(item => `<option value="${item.value}">${item.label}</option>`)
-        .join('');
-
     const linksContainer = document.getElementById('layoutLinks');
-    linksContainer.innerHTML = layoutOptions.map(item => `
-        <article class="layout-card">
+    linksContainer.innerHTML = layoutOptions.map(item =>
+        `<article class="layout-card">
             <div>
                 <h3>${item.label}</h3>
                 <p>${item.detail}</p>
@@ -62,8 +52,8 @@ function initLayoutOptions() {
                 <button type="button" class="icon-button" data-copy-layout="${item.value}" title="Copiar link" aria-label="Copiar link de ${item.label}">Copiar</button>
                 <button type="button" class="icon-button open" data-open-layout="${item.value}" title="Abrir tela" aria-label="Abrir ${item.label}">Abrir</button>
             </div>
-        </article>
-    `).join('');
+        </article>`
+    ).join('');
 }
 
 function setButtonBusy(button, text) {
@@ -95,8 +85,6 @@ function secondsLabel(secondsValue) {
 }
 
 function updateSummary() {
-    const selectedLayout = layoutOptions.find(item => item.value === fields.displayDefaultLayout.value);
-    document.getElementById('summaryLayout').textContent = selectedLayout ? selectedLayout.label.replace('Modo ', '') : 'Padrao';
     document.getElementById('summaryDb').textContent = dbLabels[fields.dbType.value] || fields.dbType.value || '-';
     document.getElementById('summaryFetch').textContent = secondsLabel(fields.displayFetchInterval.value);
 }
@@ -129,18 +117,12 @@ function getDisplayFormData() {
     return {
         title: fields.displayTitle.value,
         footerText: fields.displayFooter.value,
-        defaultLayout: fields.displayDefaultLayout.value,
         fetchInterval: secondsToMilliseconds(fields.displayFetchInterval.value),
         carouselInterval: secondsToMilliseconds(fields.displayCarouselInterval.value),
         vitrineItemInterval: secondsToMilliseconds(fields.displayVitrineInterval.value),
-        itemsPadrao: fields.displayItemsPadrao.value,
-        itemsCompacto: fields.displayItemsCompacto.value,
-        itemsVitrine: fields.displayItemsVitrine.value,
-        itemsSemFoto: fields.displayItemsSemFoto.value,
         primaryColor: fields.displayPrimaryColor.value,
         accentColor: fields.displayAccentColor.value,
-        backgroundColor: fields.displayBackgroundColor.value,
-        localImagesPath: fields.localImagesPath.value
+        backgroundColor: fields.displayBackgroundColor.value
     };
 }
 
@@ -183,18 +165,13 @@ async function loadDisplayConfig() {
         const data = await response.json();
         fields.displayTitle.value = data.title || '';
         fields.displayFooter.value = data.footerText || '';
-        fields.displayDefaultLayout.value = data.defaultLayout || 'padrao';
         fields.displayFetchInterval.value = millisecondsToSeconds(data.fetchInterval, 30);
         fields.displayCarouselInterval.value = millisecondsToSeconds(data.carouselInterval, 10);
         fields.displayVitrineInterval.value = millisecondsToSeconds(data.vitrineItemInterval, 6);
-        fields.displayItemsPadrao.value = data.itemsPadrao || 4;
-        fields.displayItemsCompacto.value = data.itemsCompacto || 6;
-        fields.displayItemsVitrine.value = data.itemsVitrine || 5;
-        fields.displayItemsSemFoto.value = data.itemsSemFoto || 4;
         fields.displayPrimaryColor.value = data.primaryColor || '#d32f2f';
         fields.displayAccentColor.value = data.accentColor || '#fbc02d';
         fields.displayBackgroundColor.value = data.backgroundColor || '#111111';
-        fields.localImagesPath.value = data.localImagesPath || '';
+
         updateSummary();
     } catch (err) {
         showToast('Erro ao carregar visual da tela.', 'error');
@@ -225,6 +202,66 @@ document.getElementById('btnTest').addEventListener('click', async (event) => {
         showToast(`Falha na conexao: ${err.message}`, 'error');
     } finally {
         done();
+    }
+});
+
+// Lógica do Botão "Testar SQL" e Modal
+const modalOverlay = document.getElementById('sqlTestModal');
+const btnCloseModal = document.getElementById('btnCloseModal');
+const resultHead = document.getElementById('sqlResultHead');
+const resultBody = document.getElementById('sqlResultBody');
+
+document.getElementById('btnTestQuery').addEventListener('click', async (event) => {
+    const done = setButtonBusy(event.currentTarget, 'Testando');
+    showToast('Executando consulta...', 'info');
+
+    try {
+        const result = await postJson('/api/config/test-query', getFormData());
+        
+        // Limpar tabela
+        resultHead.innerHTML = '';
+        resultBody.innerHTML = '';
+
+        if (!result.data || result.data.length === 0) {
+            resultBody.innerHTML = '<tr><td colspan="100%">Nenhum registro encontrado.</td></tr>';
+        } else {
+            // Criar cabeçalhos dinamicamente
+            const columns = Object.keys(result.data[0]);
+            const trHead = document.createElement('tr');
+            columns.forEach(col => {
+                const th = document.createElement('th');
+                th.textContent = col;
+                trHead.appendChild(th);
+            });
+            resultHead.appendChild(trHead);
+
+            // Criar linhas
+            result.data.forEach(row => {
+                const tr = document.createElement('tr');
+                columns.forEach(col => {
+                    const td = document.createElement('td');
+                    td.textContent = row[col] !== null && row[col] !== undefined ? String(row[col]) : 'NULL';
+                    tr.appendChild(td);
+                });
+                resultBody.appendChild(tr);
+            });
+        }
+        
+        modalOverlay.classList.add('show');
+    } catch (err) {
+        showToast(`Erro na consulta: ${err.message}`, 'error');
+    } finally {
+        done();
+    }
+});
+
+btnCloseModal.addEventListener('click', () => {
+    modalOverlay.classList.remove('show');
+});
+
+modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) {
+        modalOverlay.classList.remove('show');
     }
 });
 
@@ -284,7 +321,6 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
 });
 
 fields.dbType.addEventListener('change', applyDbDefaults);
-fields.displayDefaultLayout.addEventListener('change', updateSummary);
 fields.displayFetchInterval.addEventListener('input', updateSummary);
 
 initLayoutOptions();

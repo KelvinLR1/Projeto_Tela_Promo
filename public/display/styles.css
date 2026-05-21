@@ -27,12 +27,33 @@ body {
 
 /* HEADER */
 .header {
+    position: relative;
     background: linear-gradient(90deg, var(--promo-primary, #d32f2f), #f44336, var(--promo-primary, #d32f2f));
     color: #fff;
-    text-align: center;
-    padding: 2vh 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5vh 4vw;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     z-index: 10;
+}
+
+.header-logo-left,
+.header-logo-right {
+    position: absolute;
+    height: 7.5vh;
+    width: auto;
+    object-fit: contain;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.header-logo-left {
+    left: 4vw;
+}
+
+.header-logo-right {
+    right: 4vw;
 }
 
 .header h1 {

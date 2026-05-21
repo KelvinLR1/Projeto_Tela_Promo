@@ -123,22 +123,13 @@ function sanitizeColor(value, fallback) {
 }
 
 function getDisplayConfig() {
-  const defaultLayout = VALID_LAYOUTS.includes(process.env.DISPLAY_DEFAULT_LAYOUT)
-    ? process.env.DISPLAY_DEFAULT_LAYOUT
-    : 'padrao';
-
   return {
-    localImagesPath: process.env.LOCAL_IMAGES_PATH || '',
     title: process.env.DISPLAY_TITLE || 'OFERTAS IMPERDIVEIS',
     footerText: process.env.DISPLAY_FOOTER_TEXT || 'Aproveite! Promocoes validas enquanto durarem os estoques.',
-    defaultLayout,
     fetchInterval: clampNumber(process.env.DISPLAY_FETCH_INTERVAL, 30000, 5000, 300000),
     carouselInterval: clampNumber(process.env.DISPLAY_CAROUSEL_INTERVAL, 10000, 3000, 120000),
     vitrineItemInterval: clampNumber(process.env.DISPLAY_VITRINE_ITEM_INTERVAL, 6000, 3000, 120000),
-    itemsPadrao: clampNumber(process.env.DISPLAY_ITEMS_PADRAO, 4, 1, 8),
-    itemsCompacto: clampNumber(process.env.DISPLAY_ITEMS_COMPACTO, 6, 1, 12),
-    itemsVitrine: clampNumber(process.env.DISPLAY_ITEMS_VITRINE, 5, 1, 10),
-    itemsSemFoto: clampNumber(process.env.DISPLAY_ITEMS_SEM_FOTO, 4, 1, 8),
+
     primaryColor: sanitizeColor(process.env.DISPLAY_PRIMARY_COLOR, '#d32f2f'),
     accentColor: sanitizeColor(process.env.DISPLAY_ACCENT_COLOR, '#fbc02d'),
     backgroundColor: sanitizeColor(process.env.DISPLAY_BACKGROUND_COLOR, '#111111')
@@ -173,24 +164,7 @@ app.get('/display', (req, res) => {
 app.use('/admin', express.static(ADMIN_DIR));
 app.use(express.static(DISPLAY_DIR));
 
-// Serve imagens locais dinamicamente
-// Se LOCAL_IMAGES_PATH for atualizada em tempo de execução, reflete na hora sem precisar reiniciar o servidor!
-const fsSync = require('fs');
-if (!fsSync.existsSync(IMAGES_DIR)) {
-  fsSync.mkdirSync(IMAGES_DIR, { recursive: true });
-}
-
-app.use('/imagens', (req, res, next) => {
-  let targetDir = IMAGES_DIR;
-  if (process.env.LOCAL_IMAGES_PATH) {
-    const customPath = path.resolve(process.env.LOCAL_IMAGES_PATH);
-    if (fsSync.existsSync(customPath)) {
-      targetDir = customPath;
-    }
-  }
-  express.static(targetDir)(req, res, next);
-});
-
+app.use('/imagens', express.static(IMAGES_DIR));
 // Gerenciador de conexão dinâmico para múltiplos bancos de dados
 let dbPool = null;
 
@@ -469,8 +443,14 @@ app.post('/api/logout', (req, res) => {
   res.json({ success: true, message: 'Sessão encerrada com sucesso!' });
 });
 
-// Rota para abrir a página de configuração de forma mais amigável
+// Redirect para evitar acesso direto ao HTML estático sem autenticação
+app.get('/admin/config.html', (req, res) => {
+  res.redirect('/config');
+});
+
+// Rota para abrir a página de configuração de forma mais amigável com Cache-Control desativado
 app.get('/config', cookieAuth, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   res.sendFile(path.join(ADMIN_DIR, 'config.html'));
 });
 
@@ -561,6 +541,66 @@ app.post('/api/config/test', cookieAuth, async (req, res) => {
   }
 });
 
+function isSafeSelectQuery(query) {
+  if (!query || query.trim() === '') return true;
+  const cleaned = query.trim().toUpperCase();
+  if (cleaned.includes(';')) return false; // Impede múltiplas instruções
+  if (!cleaned.startsWith('SELECT') && !cleaned.startsWith('WITH')) return false;
+  
+  const forbidden = /\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|REPLACE|CREATE|GRANT|REVOKE|EXEC|EXECUTE|CALL|MERGE|COMMIT|ROLLBACK|DENY)\b/i;
+  if (forbidden.test(query)) return false;
+  return true;
+}
+
+app.post('/api/config/test-query', cookieAuth, async (req, res) => {
+  const { dbType, host, port, database, user, password, dbQuery, dbInstance } = req.body;
+  const cleanedQuery = (dbQuery || '').replace(/\r?\n/g, ' ').trim();
+  
+  if (!isSafeSelectQuery(cleanedQuery)) {
+    return res.status(403).json({ success: false, error: 'Comando SQL não permitido. Apenas consultas SELECT (leitura) são aceitas.' });
+  }
+
+  let defaultQuery = '';
+
+  try {
+    let rows = [];
+    if (dbType === 'mysql') {
+      const mysql = require('mysql2/promise');
+      const conn = await mysql.createConnection({ host, user, password, database, port: parseInt(port) || 3306, connectTimeout: 3000 });
+      defaultQuery = `SELECT id, nome_produto, preco_anterior, preco_atual, link_imagem, DATE_FORMAT(data_validade, '%Y-%m-%d') as data_validade FROM promocoes WHERE data_validade >= CURDATE() LIMIT 10`;
+      const [results] = await conn.query(cleanedQuery || defaultQuery);
+      rows = results;
+      await conn.end();
+    } else if (dbType === 'postgres' || dbType === 'postgresql') {
+      const { Client } = require('pg');
+      const client = new Client({ host, user, password, database, port: parseInt(port) || 5432, connectionTimeoutMillis: 3000 });
+      await client.connect();
+      defaultQuery = `SELECT id, nome_produto, preco_anterior, preco_atual, link_imagem, to_char(data_validade, 'YYYY-MM-DD') as data_validade FROM promocoes WHERE data_validade >= CURRENT_DATE LIMIT 10`;
+      const result = await client.query(cleanedQuery || defaultQuery);
+      rows = result.rows;
+      await client.end();
+    } else if (dbType === 'mssql' || dbType === 'sqlserver') {
+      const mssql = require('mssql');
+      const config = { user, password, server: host, database, options: { encrypt: false, trustServerCertificate: true }, connectionTimeout: 3000 };
+      if (dbInstance) config.options.instanceName = dbInstance;
+      else config.port = parseInt(port) || 1433;
+      const conn = await mssql.connect(config);
+      defaultQuery = `SELECT TOP 10 id, nome_produto, preco_anterior, preco_atual, link_imagem, FORMAT(data_validade, 'yyyy-MM-dd') as data_validade FROM promocoes WHERE data_validade >= CAST(GETDATE() AS DATE)`;
+      const result = await conn.request().query(cleanedQuery || defaultQuery);
+      rows = result.recordset;
+      await conn.close();
+    } else {
+      return res.status(400).json({ success: false, error: 'Banco não suportado' });
+    }
+    
+    // Pegar no máximo as primeiras 15 linhas para não travar o navegador
+    const limitedRows = Array.isArray(rows) ? rows.slice(0, 15) : [];
+    res.json({ success: true, data: limitedRows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Salva as novas configurações no .env e atualiza as conexões em tempo de execução
 const fs = require('fs');
 
@@ -593,14 +633,10 @@ function buildEnvContent() {
     envLine('LOCAL_IMAGES_PATH', process.env.LOCAL_IMAGES_PATH || ''),
     envLine('DISPLAY_TITLE', process.env.DISPLAY_TITLE || 'OFERTAS IMPERDIVEIS'),
     envLine('DISPLAY_FOOTER_TEXT', process.env.DISPLAY_FOOTER_TEXT || 'Aproveite! Promocoes validas enquanto durarem os estoques.'),
-    envLine('DISPLAY_DEFAULT_LAYOUT', process.env.DISPLAY_DEFAULT_LAYOUT || 'padrao'),
     envLine('DISPLAY_FETCH_INTERVAL', process.env.DISPLAY_FETCH_INTERVAL || '30000'),
     envLine('DISPLAY_CAROUSEL_INTERVAL', process.env.DISPLAY_CAROUSEL_INTERVAL || '10000'),
     envLine('DISPLAY_VITRINE_ITEM_INTERVAL', process.env.DISPLAY_VITRINE_ITEM_INTERVAL || '6000'),
-    envLine('DISPLAY_ITEMS_PADRAO', process.env.DISPLAY_ITEMS_PADRAO || '4'),
-    envLine('DISPLAY_ITEMS_COMPACTO', process.env.DISPLAY_ITEMS_COMPACTO || '6'),
-    envLine('DISPLAY_ITEMS_VITRINE', process.env.DISPLAY_ITEMS_VITRINE || '5'),
-    envLine('DISPLAY_ITEMS_SEM_FOTO', process.env.DISPLAY_ITEMS_SEM_FOTO || '4'),
+
     envLine('DISPLAY_PRIMARY_COLOR', process.env.DISPLAY_PRIMARY_COLOR || '#d32f2f'),
     envLine('DISPLAY_ACCENT_COLOR', process.env.DISPLAY_ACCENT_COLOR || '#fbc02d'),
     envLine('DISPLAY_BACKGROUND_COLOR', process.env.DISPLAY_BACKGROUND_COLOR || '#111111'),
@@ -616,6 +652,10 @@ function saveEnvFile() {
 app.post('/api/config/save', cookieAuth, async (req, res) => {
   const { dbType, host, port, dbInstance, database, user, password, dbQuery } = req.body;
   const cleanedQuery = (dbQuery || '').replace(/\r?\n/g, ' ').trim();
+
+  if (!isSafeSelectQuery(cleanedQuery)) {
+    return res.status(403).json({ success: false, error: 'Comando SQL não permitido. Apenas consultas SELECT (leitura) são aceitas.' });
+  }
   try {
     // Atualiza em tempo de execução
     process.env.DB_TYPE = dbType;
@@ -672,7 +712,6 @@ app.post('/api/config/display/save', cookieAuth, (req, res) => {
 
     process.env.DISPLAY_TITLE = String(title || 'OFERTAS IMPERDIVEIS').trim();
     process.env.DISPLAY_FOOTER_TEXT = String(footerText || 'Aproveite! Promocoes validas enquanto durarem os estoques.').trim();
-    process.env.DISPLAY_DEFAULT_LAYOUT = VALID_LAYOUTS.includes(defaultLayout) ? defaultLayout : 'padrao';
     process.env.DISPLAY_FETCH_INTERVAL = String(clampNumber(fetchInterval, 30000, 5000, 300000));
     process.env.DISPLAY_CAROUSEL_INTERVAL = String(clampNumber(carouselInterval, 10000, 3000, 120000));
     process.env.DISPLAY_VITRINE_ITEM_INTERVAL = String(clampNumber(vitrineItemInterval, 6000, 3000, 120000));

@@ -12,10 +12,13 @@
 <body>
     <main class="admin-shell">
         <header class="topbar">
-            <div>
-                <p class="eyebrow">Painel administrativo</p>
-                <h1>Configuracoes da tela</h1>
-                <p class="subtitle">Ajuste conexao, visual e links de exibicao em um unico lugar.</p>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <img src="/logo.png" alt="Logo" class="topbar-logo" style="height: 60px; width: auto; object-fit: contain; flex-shrink: 0;">
+                <div>
+                    <p class="eyebrow">Painel administrativo</p>
+                    <h1>Configuracoes da tela</h1>
+                    <p class="subtitle">Ajuste conexao, visual e links de exibicao em um unico lugar.</p>
+                </div>
             </div>
             <div class="topbar-actions">
                 <a class="ghost-link" href="/" target="_blank" rel="noopener">Ver tela</a>
@@ -24,10 +27,7 @@
         </header>
 
         <section class="summary-grid" aria-label="Resumo dos acessos">
-            <article class="summary-card">
-                <span class="summary-label">Layout padrao</span>
-                <strong id="summaryLayout">Padrao</strong>
-            </article>
+
             <article class="summary-card">
                 <span class="summary-label">Banco</span>
                 <strong id="summaryDb">MySQL</strong>
@@ -92,7 +92,10 @@
                     </div>
 
                     <div class="field">
-                        <label for="dbQuery">Consulta SQL personalizada</label>
+                        <div class="query-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label for="dbQuery" style="margin-bottom: 0;">Consulta SQL personalizada</label>
+                            <button type="button" class="secondary-button" id="btnTestQuery" style="padding: 4px 12px; font-size: 13px;">Testar SQL</button>
+                        </div>
                         <textarea id="dbQuery" rows="5" placeholder="SELECT nome_produto, preco_anterior, preco_atual, link_imagem, data_validade FROM promocoes"></textarea>
                         <div class="sql-hint">
                             <p class="hint">Opcional. Se preenchida, sua consulta <strong>deve retornar os aliases exatos</strong> abaixo. Campos obrigatórios precisam estar no SELECT.</p>
@@ -128,7 +131,7 @@
                                         <td><code>link_imagem</code></td>
                                         <td>TEXT</td>
                                         <td><span class="badge-opt">Opcional</span></td>
-                                        <td>URL externa <em>https://…</em> <strong>ou</strong> caminho local <em>/imagens/foto.jpg</em></td>
+                                        <td>URL completa ou caminho (ex: <em>https://...</em> ou <em>/imagens/foto.jpg</em>)</td>
                                     </tr>
                                     <tr>
                                         <td><code>data_validade</code></td>
@@ -174,20 +177,15 @@
                                     </tr>
                                 </tbody>
                             </table>
-                            <div class="local-images-info">
-                                <span class="info-icon">📁</span>
-                                <div>
-                                    <strong>Imagens salvas no servidor</strong>
-                                    <p>Salve os arquivos na pasta <code>public/imagens/</code> do projeto. Elas ficam acessíveis via <code>/imagens/nome.jpg</code> de qualquer TV ou computador na mesma rede que acesse este servidor.<br>
-                                    Exemplo no banco: <code>/imagens/arroz_5kg.jpg</code></p>
-                                </div>
-                            </div>
+
                         </div>
                     </div>
 
                     <button type="submit" class="primary-button">Salvar conexao</button>
                 </form>
             </section>
+
+            <div class="right-column">
 
             <section class="panel">
                 <div class="panel-heading">
@@ -198,25 +196,15 @@
                 </div>
 
                 <form id="displayForm" class="form-stack">
-                    <div class="field">
-                        <label for="displayTitle">Titulo principal</label>
-                        <input type="text" id="displayTitle" placeholder="OFERTAS IMPERDIVEIS">
-                    </div>
-
-                    <div class="field">
-                        <label for="displayFooter">Texto do rodape</label>
-                        <input type="text" id="displayFooter" placeholder="Aproveite! Promocoes validas enquanto durarem os estoques.">
-                    </div>
-
-                    <div class="field">
-                        <label for="displayDefaultLayout">Layout padrao</label>
-                        <select id="displayDefaultLayout"></select>
-                    </div>
-
-                    <div class="field">
-                        <label for="localImagesPath">Caminho da pasta de imagens no servidor</label>
-                        <input type="text" id="localImagesPath" placeholder="Ex: C:\ImagensProdutos ou D:\Promo\Fotos">
-                        <p class="hint">Opcional. Se deixado em branco, usará a pasta padrão <code>public/imagens/</code> do projeto.</p>
+                    <div class="split-fields split-fields-equal">
+                        <div class="field">
+                            <label for="displayTitle">Titulo principal</label>
+                            <input type="text" id="displayTitle" placeholder="OFERTAS IMPERDIVEIS">
+                        </div>
+                        <div class="field">
+                            <label for="displayFooter">Texto do rodape</label>
+                            <input type="text" id="displayFooter" placeholder="Aproveite! Promocoes validas enquanto durarem os estoques.">
+                        </div>
                     </div>
 
                     <div class="color-grid">
@@ -236,7 +224,7 @@
 
                     <div class="settings-group">
                         <h3>Tempos</h3>
-                        <div class="split-fields">
+                        <div class="split-fields-3">
                             <div class="field">
                                 <label for="displayCarouselInterval">Carrossel (segundos)</label>
                                 <input type="number" id="displayCarouselInterval" min="3" step="1">
@@ -245,31 +233,9 @@
                                 <label for="displayFetchInterval">Atualizacao (segundos)</label>
                                 <input type="number" id="displayFetchInterval" min="5" step="1">
                             </div>
-                        </div>
-                        <div class="field">
-                            <label for="displayVitrineInterval">Troca da vitrine (segundos)</label>
-                            <input type="number" id="displayVitrineInterval" min="3" step="1">
-                        </div>
-                    </div>
-
-                    <div class="settings-group">
-                        <h3>Itens por tela</h3>
-                        <div class="items-grid">
                             <div class="field">
-                                <label for="displayItemsPadrao">Padrao</label>
-                                <input type="number" id="displayItemsPadrao" min="1" max="8">
-                            </div>
-                            <div class="field">
-                                <label for="displayItemsCompacto">Compacto</label>
-                                <input type="number" id="displayItemsCompacto" min="1" max="12">
-                            </div>
-                            <div class="field">
-                                <label for="displayItemsVitrine">Vitrine</label>
-                                <input type="number" id="displayItemsVitrine" min="1" max="10">
-                            </div>
-                            <div class="field">
-                                <label for="displayItemsSemFoto">Sem foto</label>
-                                <input type="number" id="displayItemsSemFoto" min="1" max="8">
+                                <label for="displayVitrineInterval">Troca da vitrine (seg)</label>
+                                <input type="number" id="displayVitrineInterval" min="3" step="1">
                             </div>
                         </div>
                     </div>
@@ -287,8 +253,28 @@
                 </div>
                 <div id="layoutLinks" class="layout-links"></div>
             </section>
+
+            </div><!-- /.right-column -->
         </div>
     </main>
+
+    <!-- Modal de Teste SQL -->
+    <div id="sqlTestModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Resultado do SQL (Max 15 linhas)</h2>
+                <button type="button" class="icon-button close-button" id="btnCloseModal" aria-label="Fechar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-container">
+                    <table id="sqlResultTable" class="data-table">
+                        <thead id="sqlResultHead"></thead>
+                        <tbody id="sqlResultBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="/admin/admin-config.js"></script>
