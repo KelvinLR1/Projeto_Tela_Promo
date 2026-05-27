@@ -38,7 +38,8 @@ const fields = {
     displayPrimaryColor: document.getElementById('displayPrimaryColor'),
     displayAccentColor: document.getElementById('displayAccentColor'),
     displayBackgroundColor: document.getElementById('displayBackgroundColor'),
-    localImagesPath: document.getElementById('localImagesPath')
+    localImagesPath: document.getElementById('localImagesPath'),
+    displayFilterActiveOnly: document.getElementById('displayFilterActiveOnly')
 };
 
 function initLayoutOptions() {
@@ -124,7 +125,8 @@ function getDisplayFormData() {
         vitrineItemInterval: secondsToMilliseconds(fields.displayVitrineInterval.value),
         primaryColor: fields.displayPrimaryColor.value,
         accentColor: fields.displayAccentColor.value,
-        backgroundColor: fields.displayBackgroundColor.value
+        backgroundColor: fields.displayBackgroundColor.value,
+        filterActiveOnly: fields.displayFilterActiveOnly.value === 'true'
     };
 }
 
@@ -174,6 +176,7 @@ async function loadDisplayConfig() {
         fields.displayPrimaryColor.value = data.primaryColor || '#d32f2f';
         fields.displayAccentColor.value = data.accentColor || '#fbc02d';
         fields.displayBackgroundColor.value = data.backgroundColor || '#111111';
+        fields.displayFilterActiveOnly.value = data.filterActiveOnly ? 'true' : 'false';
 
         updateSummary();
     } catch (err) {
@@ -334,6 +337,7 @@ document.getElementById('btnRestoreDefaults').addEventListener('click', function
         fields.displayFetchInterval.value = 30;
         fields.displayCarouselInterval.value = 10;
         fields.displayVitrineInterval.value = 6;
+        fields.displayFilterActiveOnly.value = 'false';
 
         const setColor = (field, value) => {
             if (!field) return;

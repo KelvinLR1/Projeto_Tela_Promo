@@ -59,7 +59,8 @@ async function fetchDisplayConfig(isInitialLoad = false) {
             itemsPerPage,
             fetchInterval,
             carouselInterval,
-            vitrineItemInterval
+            vitrineItemInterval,
+            filterActiveOnly: displayConfig ? displayConfig.filterActiveOnly : false
         };
 
         displayConfig = nextConfig;
@@ -136,11 +137,13 @@ function scheduleDisplayConfigFetch() {
 
 function applyLiveConfigChange(previousState) {
     const fetchTimingChanged = previousState.fetchInterval !== fetchInterval;
+    const filterActiveOnlyChanged = previousState.filterActiveOnly !== (displayConfig && displayConfig.filterActiveOnly);
     const presentationChanged =
         previousState.layoutMode !== layoutMode ||
         previousState.itemsPerPage !== itemsPerPage ||
         previousState.carouselInterval !== carouselInterval ||
-        previousState.vitrineItemInterval !== vitrineItemInterval;
+        previousState.vitrineItemInterval !== vitrineItemInterval ||
+        filterActiveOnlyChanged;
 
     if (fetchTimingChanged) {
         schedulePromotionFetch();
@@ -149,8 +152,101 @@ function applyLiveConfigChange(previousState) {
     if (presentationChanged) {
         currentPage = 0;
         vitrineActiveIndex = 0;
-        updateCarousel();
+        if (filterActiveOnlyChanged) {
+            fetchPromotions();
+        } else {
+            updateCarousel();
+        }
     }
+}
+
+function getLocalDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function filterPromotionsIfNecessary(promotions) {
+    if (!displayConfig || displayConfig.filterActiveOnly !== true) {
+        return promotions;
+    }
+
+    const now = new Date();
+
+    return promotions.filter(item => {
+        // 1. Validação de Intervalo de Datas (Vigência de data)
+        const todayStr = getLocalDateString(now);
+
+        if (item.data_inicio && item.data_inicio.trim() !== '') {
+            if (todayStr < item.data_inicio.trim()) {
+                return false; // A oferta ainda não começou
+            }
+        }
+
+        if (item.data_fim && item.data_fim.trim() !== '') {
+            if (todayStr > item.data_fim.trim()) {
+                return false; // A oferta já terminou
+            }
+        } else if (item.data_validade && item.data_validade.trim() !== '') {
+            if (todayStr > item.data_validade.trim()) {
+                return false; // A oferta já expirou
+            }
+        }
+
+        // 2. Validação de Dias da Semana
+        if (item.dias_semana && String(item.dias_semana).trim() !== '') {
+            const todayDay = now.getDay(); // 0 (Domingo) a 6 (Sábado)
+            const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+            const dayShortNames = ['dom', 'seg', 'ter', 'qui', 'sex', 'sab'];
+
+            const rawDays = String(item.dias_semana)
+                .split(',')
+                .map(d => d.trim().toLowerCase())
+                .filter(Boolean);
+
+            if (rawDays.length > 0) {
+                const matchesDay = rawDays.some(d => {
+                    if (d === String(todayDay)) return true;
+                    if (d === dayNames[todayDay] || d.startsWith(dayNames[todayDay])) return true;
+                    if (todayDay === 2 && (d === 'terça' || d.startsWith('terça'))) return true;
+                    if (d === dayShortNames[todayDay]) return true;
+                    return false;
+                });
+
+                if (!matchesDay) {
+                    return false; // Não é dia de exibição para este produto hoje
+                }
+            }
+        }
+
+        // 3. Validação de Faixa de Horário
+        const currentHours = now.getHours();
+        const currentMinutes = now.getMinutes();
+        const currentTimeVal = currentHours * 60 + currentMinutes;
+
+        if (item.hora_inicio && item.hora_inicio.trim() !== '') {
+            const matchStart = item.hora_inicio.trim().match(/^(\d{1,2}):(\d{2})/);
+            if (matchStart) {
+                const startTimeVal = parseInt(matchStart[1], 10) * 60 + parseInt(matchStart[2], 10);
+                if (currentTimeVal < startTimeVal) {
+                    return false; // Antes da hora de início
+                }
+            }
+        }
+
+        if (item.hora_fim && item.hora_fim.trim() !== '') {
+            const matchEnd = item.hora_fim.trim().match(/^(\d{1,2}):(\d{2})/);
+            if (matchEnd) {
+                const endTimeVal = parseInt(matchEnd[1], 10) * 60 + parseInt(matchEnd[2], 10);
+                if (currentTimeVal > endTimeVal) {
+                    return false; // Depois da hora de término
+                }
+            }
+        }
+
+        return true;
+    });
 }
 
 async function fetchPromotions() {
@@ -161,10 +257,11 @@ async function fetchPromotions() {
         const data = await response.json();
         if (!Array.isArray(data)) throw new Error('Formato inesperado da API');
         const normalizedData = data.map(normalizePromotion).filter(Boolean);
+        const filteredData = filterPromotionsIfNecessary(normalizedData);
         lastFetchFailed = false;
         
-        if (JSON.stringify(normalizedData) !== JSON.stringify(allPromotions)) {
-            allPromotions = normalizedData;
+        if (JSON.stringify(filteredData) !== JSON.stringify(allPromotions)) {
+            allPromotions = filteredData;
             currentPage = 0;
             vitrineActiveIndex = 0;
             updateCarousel();
@@ -304,6 +401,74 @@ function renderStatusMessage(title, detail) {
     carouselContainer.appendChild(status);
 }
 
+function isLastActiveDay(item) {
+    const endDateStr = item.data_fim || item.data_validade;
+    if (!endDateStr || endDateStr.trim() === '') {
+        return false;
+    }
+
+    const now = new Date();
+    const todayStr = getLocalDateString(now);
+
+    if (todayStr > endDateStr) {
+        return false;
+    }
+
+    // Se hoje é exatamente o dia de término da promoção, hoje é o último dia
+    if (todayStr === endDateStr) {
+        return true;
+    }
+
+    // Se hoje ela não está ativa de acordo com o filtro (ex: dia da semana errado),
+    // hoje não é o último dia de exibição
+    if (filterPromotionsIfNecessary([item]).length === 0) {
+        return false;
+    }
+
+    const [endYear, endMonth, endDay] = endDateStr.split('-').map(Number);
+    const endDate = new Date(endYear, endMonth - 1, endDay);
+    endDate.setHours(0, 0, 0, 0);
+
+    const checkDate = new Date(now);
+    checkDate.setHours(0, 0, 0, 0);
+
+    // Itera dia por dia a partir de amanhã até o dia final de vigência
+    while (true) {
+        checkDate.setDate(checkDate.getDate() + 1);
+        if (checkDate.getTime() > endDate.getTime()) {
+            break;
+        }
+
+        // Se tem restrição de dias da semana, verifica se o dia futuro é ativo
+        if (item.dias_semana && String(item.dias_semana).trim() !== '') {
+            const checkDayOfWeek = checkDate.getDay();
+            const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+            const dayShortNames = ['dom', 'seg', 'ter', 'qui', 'sex', 'sab'];
+
+            const rawDays = String(item.dias_semana)
+                .split(',')
+                .map(d => d.trim().toLowerCase())
+                .filter(Boolean);
+
+            const matchesDay = rawDays.some(d => {
+                if (d === String(checkDayOfWeek)) return true;
+                if (d === dayNames[checkDayOfWeek] || d.startsWith(dayNames[checkDayOfWeek])) return true;
+                if (checkDayOfWeek === 2 && (d === 'terça' || d.startsWith('terça'))) return true;
+                if (d === dayShortNames[checkDayOfWeek]) return true;
+                return false;
+            });
+
+            if (matchesDay) {
+                return false; // Existe outro dia ativo no futuro antes da data fim
+            }
+        } else {
+            return false; // Sem limites de dia da semana, então amanhã com certeza é ativo
+        }
+    }
+
+    return true; // Não há mais dias ativos futuros até a data final, hoje é o último dia!
+}
+
 function getValidityBadgeText(item) {
     return getValidityBadgeParts(item).map(part => part.value).join(' - ');
 }
@@ -314,6 +479,10 @@ function getValidityBadgeParts(item) {
         : '';
 
     if (customText) return [{ type: 'text', label: 'OFERTA', value: customText }];
+
+    if (isLastActiveDay(item)) {
+        return [{ type: 'date', label: 'VALIDADE', value: 'ÚLTIMO DIA!' }];
+    }
 
     const scheduleParts = getScheduleBadgeParts(item);
     if (scheduleParts.length > 0) return scheduleParts;

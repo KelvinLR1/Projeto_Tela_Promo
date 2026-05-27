@@ -152,7 +152,8 @@ function getDisplayConfig() {
 
     primaryColor: sanitizeColor(process.env.DISPLAY_PRIMARY_COLOR, '#d32f2f'),
     accentColor: sanitizeColor(process.env.DISPLAY_ACCENT_COLOR, '#fbc02d'),
-    backgroundColor: sanitizeColor(process.env.DISPLAY_BACKGROUND_COLOR, '#111111')
+    backgroundColor: sanitizeColor(process.env.DISPLAY_BACKGROUND_COLOR, '#111111'),
+    filterActiveOnly: process.env.DISPLAY_FILTER_ACTIVE_ONLY === 'true'
   };
 }
 
@@ -751,6 +752,7 @@ function buildEnvContent() {
     envLine('DISPLAY_PRIMARY_COLOR', process.env.DISPLAY_PRIMARY_COLOR || '#d32f2f'),
     envLine('DISPLAY_ACCENT_COLOR', process.env.DISPLAY_ACCENT_COLOR || '#fbc02d'),
     envLine('DISPLAY_BACKGROUND_COLOR', process.env.DISPLAY_BACKGROUND_COLOR || '#111111'),
+    envLine('DISPLAY_FILTER_ACTIVE_ONLY', process.env.DISPLAY_FILTER_ACTIVE_ONLY || 'false'),
     ''
   ].join('\n');
 }
@@ -816,7 +818,8 @@ app.post('/api/config/display/save', cookieAuth, (req, res) => {
       itemsSemFoto,
       primaryColor,
       accentColor,
-      backgroundColor
+      backgroundColor,
+      filterActiveOnly
     } = req.body;
 
     process.env.LOCAL_IMAGES_PATH = sanitizeWindowsPath(localImagesPath);
@@ -833,6 +836,7 @@ app.post('/api/config/display/save', cookieAuth, (req, res) => {
     process.env.DISPLAY_PRIMARY_COLOR = sanitizeColor(primaryColor, '#d32f2f');
     process.env.DISPLAY_ACCENT_COLOR = sanitizeColor(accentColor, '#fbc02d');
     process.env.DISPLAY_BACKGROUND_COLOR = sanitizeColor(backgroundColor, '#111111');
+    process.env.DISPLAY_FILTER_ACTIVE_ONLY = filterActiveOnly ? 'true' : 'false';
 
     saveEnvFile();
     res.json({ success: true, message: 'Configuracoes visuais salvas!', config: getDisplayConfig() });
