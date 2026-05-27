@@ -40,13 +40,28 @@ if (Test-Path $portableNode) {
     Write-Host "Node.exe do sistema encontrado em: $nodePath"
 }
 
-# 3. Install production dependencies (skip if portable/already packaged)
-if ($isPortable) {
-    Write-Host "Modo Portatil ativo: pulando instalacao de dependencias (npm install) assumindo que 'node_modules' ja esta empacotado." -ForegroundColor Green
+# 3. Install production dependencies (skip if portable/already packaged and node_modules exists)
+$nodeModulesPath = Join-Path $ProjectDir "node_modules"
+if ($isPortable -and (Test-Path $nodeModulesPath)) {
+    Write-Host "Modo Portatil ativo: pulando instalacao de dependencias (npm install) ja que 'node_modules' esta presente." -ForegroundColor Green
 } else {
-    Write-Host "Instalando dependencias de producao (npm install)..." -ForegroundColor Yellow
-    cd $ProjectDir
-    npm install --omit=dev
+    if ($isPortable) {
+        Write-Host "Modo Portatil detectado, mas 'node_modules' nao esta presente. Tentando instalar..." -ForegroundColor Yellow
+    } else {
+        Write-Host "Instalando dependencias de producao (npm install)..." -ForegroundColor Yellow
+    }
+    
+    $npmCmd = Get-Command npm -ErrorAction SilentlyContinue
+    if ($npmCmd) {
+        cd $ProjectDir
+        & npm install --omit=dev
+    } else {
+        if (-not (Test-Path $nodeModulesPath)) {
+            Write-Error "Pasta 'node_modules' esta faltando e o comando 'npm' nao esta disponivel neste sistema para realiza-la."
+            exit 1
+        }
+        Write-Host "Utilizando pasta 'node_modules' ja existente (npm nao disponivel)." -ForegroundColor Green
+    }
 }
 
 # 4. Download and setup NSSM if not present
