@@ -4,6 +4,7 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -124,6 +125,7 @@ function sanitizeColor(value, fallback) {
 
 function getDisplayConfig() {
   return {
+    localImagesPath: process.env.LOCAL_IMAGES_PATH || '',
     title: process.env.DISPLAY_TITLE || 'OFERTAS IMPERDIVEIS',
     footerText: process.env.DISPLAY_FOOTER_TEXT || 'Aproveite! Promocoes validas enquanto durarem os estoques.',
     fetchInterval: clampNumber(process.env.DISPLAY_FETCH_INTERVAL, 30000, 5000, 300000),
@@ -248,6 +250,35 @@ function processProductRows(rows) {
   return rows.map(r => {
     // 1. Tratamento do link de imagem
     let link = r.link_imagem || '';
+    
+    // Se não houver link no banco, tenta buscar pelo ID na pasta local configurada ou na pasta padrão do projeto
+    if (!link && r.id) {
+      const extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+      const searchDirs = [];
+      if (process.env.LOCAL_IMAGES_PATH) {
+        searchDirs.push({ dir: process.env.LOCAL_IMAGES_PATH, isCustom: true });
+      }
+      searchDirs.push({ dir: IMAGES_DIR, isCustom: false });
+
+      for (const item of searchDirs) {
+        let found = false;
+        for (const ext of extensions) {
+          const fileName = `${r.id}${ext}`;
+          const fullPath = path.join(item.dir, fileName);
+          if (fs.existsSync(fullPath)) {
+            if (item.isCustom) {
+              link = `/api/local-image?path=${encodeURIComponent(fullPath)}`;
+            } else {
+              link = `/imagens/${fileName}`;
+            }
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+    }
+
     if (link && (path.isAbsolute(link) || /^[a-zA-Z]:[\\\/]/.test(link))) {
       link = `/api/local-image?path=${encodeURIComponent(link)}`;
     }
@@ -400,7 +431,7 @@ app.get('/api/local-image', (req, res) => {
     const resolvedPath = path.resolve(filePath);
     
     // Verifica se o arquivo existe fisicamente no servidor
-    if (!fsSync.existsSync(resolvedPath)) {
+    if (!fs.existsSync(resolvedPath)) {
       return res.status(404).send('Imagem não encontrada no servidor.');
     }
 
@@ -479,7 +510,7 @@ app.get('/api/config/display', cookieAuth, (req, res) => {
 // Rota para testar conexão com o banco de dados temporariamente antes de salvar
 app.post('/api/config/test', cookieAuth, async (req, res) => {
   const { dbType, host, port, database, user, password, dbQuery, dbInstance } = req.body;
-  const cleanedQuery = (dbQuery || '').replace(/\r?\n/g, ' ').trim();
+  const cleanedQuery = (dbQuery || '').trim();
   try {
     if (dbType === 'mysql') {
       const mysql = require('mysql2/promise');
@@ -554,7 +585,7 @@ function isSafeSelectQuery(query) {
 
 app.post('/api/config/test-query', cookieAuth, async (req, res) => {
   const { dbType, host, port, database, user, password, dbQuery, dbInstance } = req.body;
-  const cleanedQuery = (dbQuery || '').replace(/\r?\n/g, ' ').trim();
+  const cleanedQuery = (dbQuery || '').trim();
   
   if (!isSafeSelectQuery(cleanedQuery)) {
     return res.status(403).json({ success: false, error: 'Comando SQL não permitido. Apenas consultas SELECT (leitura) são aceitas.' });
@@ -602,8 +633,6 @@ app.post('/api/config/test-query', cookieAuth, async (req, res) => {
 });
 
 // Salva as novas configurações no .env e atualiza as conexões em tempo de execução
-const fs = require('fs');
-
 function envLine(key, value) {
   const raw = String(value ?? '');
   if (/^[A-Za-z0-9_./:@-]*$/.test(raw)) {
@@ -651,7 +680,7 @@ function saveEnvFile() {
 
 app.post('/api/config/save', cookieAuth, async (req, res) => {
   const { dbType, host, port, dbInstance, database, user, password, dbQuery } = req.body;
-  const cleanedQuery = (dbQuery || '').replace(/\r?\n/g, ' ').trim();
+  const cleanedQuery = (dbQuery || '').trim();
 
   if (!isSafeSelectQuery(cleanedQuery)) {
     return res.status(403).json({ success: false, error: 'Comando SQL não permitido. Apenas consultas SELECT (leitura) são aceitas.' });

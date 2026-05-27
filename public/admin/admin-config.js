@@ -37,7 +37,8 @@ const fields = {
     displayVitrineInterval: document.getElementById('displayVitrineInterval'),
     displayPrimaryColor: document.getElementById('displayPrimaryColor'),
     displayAccentColor: document.getElementById('displayAccentColor'),
-    displayBackgroundColor: document.getElementById('displayBackgroundColor')
+    displayBackgroundColor: document.getElementById('displayBackgroundColor'),
+    localImagesPath: document.getElementById('localImagesPath')
 };
 
 function initLayoutOptions() {
@@ -115,6 +116,7 @@ function getFormData() {
 
 function getDisplayFormData() {
     return {
+        localImagesPath: fields.localImagesPath.value,
         title: fields.displayTitle.value,
         footerText: fields.displayFooter.value,
         fetchInterval: secondsToMilliseconds(fields.displayFetchInterval.value),
@@ -163,6 +165,7 @@ async function loadDisplayConfig() {
         if (!response.ok) throw new Error('Falha ao carregar visual');
 
         const data = await response.json();
+        fields.localImagesPath.value = data.localImagesPath || '';
         fields.displayTitle.value = data.title || '';
         fields.displayFooter.value = data.footerText || '';
         fields.displayFetchInterval.value = millisecondsToSeconds(data.fetchInterval, 30);

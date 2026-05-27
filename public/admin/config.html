@@ -122,6 +122,12 @@
                                         <td>Preço promocional em destaque</td>
                                     </tr>
                                     <tr>
+                                        <td><code>id</code></td>
+                                        <td>INTEGER</td>
+                                        <td><span class="badge-opt">Opcional</span></td>
+                                        <td>ID do produto — Essencial para a busca de imagens locais por ID</td>
+                                    </tr>
+                                    <tr>
                                         <td><code>preco_anterior</code></td>
                                         <td>DECIMAL</td>
                                         <td><span class="badge-opt">Opcional</span></td>
@@ -196,6 +202,12 @@
                 </div>
 
                 <form id="displayForm" class="form-stack">
+                    <div class="field">
+                        <label for="localImagesPath">Caminho das Imagens Locais (IDs dos produtos)</label>
+                        <input type="text" id="localImagesPath" placeholder="Ex: C:\FotosProdutos">
+                        <p class="hint">Caso os produtos não tenham imagem cadastrada no banco, o sistema buscará um arquivo com o ID (ex: <code>15.jpg</code>, <code>15.png</code>) nesta pasta.</p>
+                    </div>
+
                     <div class="split-fields split-fields-equal">
                         <div class="field">
                             <label for="displayTitle">Titulo principal</label>

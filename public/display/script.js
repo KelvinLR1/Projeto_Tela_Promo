@@ -195,6 +195,8 @@ function normalizeText(value) {
     } catch (err) {
         return text;
     }
+}
+
 function normalizePromotion(item) {
     if (!item || typeof item !== 'object') return null;
 
@@ -494,16 +496,10 @@ function renderCurrentPage() {
         const startIndex = (currentPage * itemsPerPage) % allPromotions.length;
         const itemsToShow = [];
         
-        if (allPromotions.length <= itemsPerPage) {
-            // Se tivermos menos itens que o limite da pagina, mostramos todos
-            itemsToShow.push(...allPromotions);
-        } else {
-            // Se tivermos mais itens, garantimos que a tela sempre fique CHEIA
-            // pegando os proximos itens do array circular
-            for (let i = 0; i < itemsPerPage; i++) {
-                const itemIndex = (startIndex + i) % allPromotions.length;
-                itemsToShow.push(allPromotions[itemIndex]);
-            }
+        // Garantimos que a tela sempre fique CHEIA repetindo os itens de forma circular
+        for (let i = 0; i < itemsPerPage; i++) {
+            const itemIndex = (startIndex + i) % allPromotions.length;
+            itemsToShow.push(allPromotions[itemIndex]);
         }
 
         if (layoutMode === 'vitrine') {
@@ -555,10 +551,6 @@ function renderGrid(itemsToShow) {
         
         clone.querySelector('.new-price').textContent = formatCurrency(item.preco_atual);
         
-        if (layoutMode === 'padrao' && allPromotions.length <= 2) {
-            card.classList.add('large-card');
-        }
-
         carouselContainer.appendChild(clone);
     });
 }
@@ -660,13 +652,10 @@ function nextVitrineItem() {
     const startIndex = (currentPage * itemsPerPage) % allPromotions.length;
     const itemsToShow = [];
     
-    if (allPromotions.length <= itemsPerPage) {
-        itemsToShow.push(...allPromotions);
-    } else {
-        for (let i = 0; i < itemsPerPage; i++) {
-            const itemIndex = (startIndex + i) % allPromotions.length;
-            itemsToShow.push(allPromotions[itemIndex]);
-        }
+    // Garantimos que a lista da vitrine sempre fique CHEIA repetindo os itens de forma circular
+    for (let i = 0; i < itemsPerPage; i++) {
+        const itemIndex = (startIndex + i) % allPromotions.length;
+        itemsToShow.push(allPromotions[itemIndex]);
     }
     
     vitrineActiveIndex++;
