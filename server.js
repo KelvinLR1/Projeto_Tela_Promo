@@ -254,8 +254,15 @@ function processProductRows(rows) {
       r[key.toLowerCase()] = originalRow[key];
     }
 
-    // 1. Tratamento do link de imagem
-    let link = r.link_imagem || '';
+    // Identificar ID com fallback para apelidos comuns
+    const rawId = r.id ?? r.id_produto ?? r.codigo ?? r.id_prod ?? r.cod_produto;
+    const productId = rawId !== undefined && rawId !== null ? String(rawId).trim() : null;
+
+    // Identificar Nome com fallback
+    const nomeProduto = r.nome_produto ?? r.nome ?? r.descricao ?? r.desc_produto ?? 'Produto em oferta';
+
+    // 1. Tratamento do link de imagem (com fallback para apelidos comuns)
+    let link = r.link_imagem ?? r.url_imagem ?? r.imagem ?? r.foto ?? '';
     if (typeof link === 'string') {
       link = link.trim();
       if (link.toLowerCase() === 'null' || link.toLowerCase() === 'undefined') {
@@ -264,8 +271,9 @@ function processProductRows(rows) {
     }
     
     // Se não houver link no banco, tenta buscar pelo ID na pasta local configurada ou na pasta padrão do projeto
-    if (!link && r.id !== undefined && r.id !== null) {
-      const extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+    if (!link && productId) {
+      // Lista de extensões suportadas (incluindo caixa alta para sistemas case-sensitive como Linux)
+      const extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.JPG', '.JPEG', '.PNG', '.WEBP', '.GIF', '.SVG'];
       const searchDirs = [];
       
       let localPath = (process.env.LOCAL_IMAGES_PATH || '').trim();
@@ -276,27 +284,34 @@ function processProductRows(rows) {
         localPath = localPath.slice(1, -1).trim();
       }
 
+      console.log(`◇ [IMAGENS LOCAIS] Buscando arquivo para ID "${productId}". Pasta: "${localPath || 'não configurada'}"`);
+
       if (localPath) {
         searchDirs.push({ dir: path.normalize(localPath), isCustom: true });
       }
       searchDirs.push({ dir: IMAGES_DIR, isCustom: false });
 
+      let found = false;
       for (const item of searchDirs) {
-        let found = false;
         for (const ext of extensions) {
-          const fileName = `${r.id}${ext}`;
+          const fileName = `${productId}${ext}`;
           const fullPath = path.join(item.dir, fileName);
           if (fs.existsSync(fullPath)) {
             if (item.isCustom) {
               link = `/api/local-image?path=${encodeURIComponent(fullPath)}`;
+              console.log(`   -> Encontrado na pasta customizada: "${fullPath}"`);
             } else {
               link = `/imagens/${fileName}`;
+              console.log(`   -> Encontrado na pasta padrão do projeto: "${fullPath}"`);
             }
             found = true;
             break;
           }
         }
         if (found) break;
+      }
+      if (!found) {
+        console.log(`   -> Nenhuma imagem local encontrada para o produto ID "${productId}" nas pastas pesquisadas.`);
       }
     }
 
@@ -306,21 +321,24 @@ function processProductRows(rows) {
 
     // 2. Tratamento seguro de preços (pode vir como número, string com vírgula/ponto, ou null)
     let precoAtual = 0;
-    if (r.preco_atual !== undefined && r.preco_atual !== null) {
-      if (typeof r.preco_atual === 'number') {
-        precoAtual = r.preco_atual;
+    // Fallback para nomes comuns de preços
+    const rawPrecoAtual = r.preco_atual ?? r.preco ?? r.valor;
+    if (rawPrecoAtual !== undefined && rawPrecoAtual !== null) {
+      if (typeof rawPrecoAtual === 'number') {
+        precoAtual = rawPrecoAtual;
       } else {
-        precoAtual = parseFloat(String(r.preco_atual).replace(',', '.'));
+        precoAtual = parseFloat(String(rawPrecoAtual).replace(',', '.'));
         if (Number.isNaN(precoAtual)) precoAtual = 0;
       }
     }
 
     let precoAnterior = null;
-    if (r.preco_anterior !== undefined && r.preco_anterior !== null && String(r.preco_anterior).trim() !== '') {
-      if (typeof r.preco_anterior === 'number') {
-        precoAnterior = r.preco_anterior;
+    const rawPrecoAnterior = r.preco_anterior ?? r.preco_de ?? r.valor_anterior;
+    if (rawPrecoAnterior !== undefined && rawPrecoAnterior !== null && String(rawPrecoAnterior).trim() !== '') {
+      if (typeof rawPrecoAnterior === 'number') {
+        precoAnterior = rawPrecoAnterior;
       } else {
-        precoAnterior = parseFloat(String(r.preco_anterior).replace(',', '.'));
+        precoAnterior = parseFloat(String(rawPrecoAnterior).replace(',', '.'));
         if (Number.isNaN(precoAnterior)) precoAnterior = null;
       }
     }
@@ -341,10 +359,12 @@ function processProductRows(rows) {
 
     return {
       ...r,
+      id: r.id ?? productId,
+      nome_produto: nomeProduto,
       link_imagem: link,
       preco_atual: precoAtual,
       preco_anterior: precoAnterior,
-      data_validade: formatDate(r.data_validade),
+      data_validade: formatDate(r.data_validade ?? r.validade),
       data_inicio: r.data_inicio !== undefined ? formatDate(r.data_inicio) : undefined,
       data_fim: r.data_fim !== undefined ? formatDate(r.data_fim) : undefined
     };
