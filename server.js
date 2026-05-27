@@ -496,7 +496,7 @@ app.get('/api/local-image', (req, res) => {
     };
     const contentType = mimeTypes[ext] || 'application/octet-stream';
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
     // Usa createReadStream para compatibilidade total com caminhos Windows
     const stream = fs.createReadStream(resolvedPath);
