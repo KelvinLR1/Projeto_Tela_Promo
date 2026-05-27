@@ -1,0 +1,26 @@
+SELECT
+    pp.id_produto AS id,
+    p.nome AS nome_produto,
+    p.preco_venda AS preco_anterior,
+    CASE
+        WHEN pp.preco_promocional_varejo <> 0 THEN pp.preco_promocional_varejo
+       -- WHEN pp.preco_promocional_atacado <> 0 THEN pp.preco_promocional_atacado
+        WHEN pp.percentual_promocional_varejo <> 0 THEN p.preco_venda - (p.preco_venda * (pp.percentual_promocional_varejo / 100))
+       -- WHEN pp.percentual_promocional_atacado <> 0 THEN p.preco_venda - (p.preco_venda * (pp.percentual_promocional_atacado / 100))
+        ELSE p.preco_venda
+    END AS preco_atual,
+    prodi.caminho_imagem AS link_imagem,
+    'SÓ HOJE' AS texto_validade
+FROM 
+    promocao_produto pp
+    LEFT JOIN produto p ON p.id_produto = pp.id_produto
+    LEFT JOIN (
+        SELECT 
+            id_produto,
+            caminho_imagem,
+            ROW_NUMBER() OVER (
+                PARTITION BY id_produto 
+                ORDER BY imagem_principal DESC
+            ) AS rn
+        FROM produto_imagem
+    ) prodi ON prodi.id_produto = p.id_produto AND prodi.rn = 1
