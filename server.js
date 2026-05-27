@@ -315,7 +315,7 @@ function processProductRows(rows) {
       }
     }
 
-    if (link && (path.isAbsolute(link) || /^[a-zA-Z]:[\\\/]/.test(link))) {
+    if (link && (/^[a-zA-Z]:[\\\/]/.test(link))) {
       link = `/api/local-image?path=${encodeURIComponent(link)}`;
     }
 
@@ -465,26 +465,49 @@ app.get('/api/promocoes', async (req, res) => {
 app.get('/api/local-image', (req, res) => {
   const filePath = req.query.path;
   if (!filePath) {
+    console.log('  [local-image] ERRO: nenhum caminho fornecido na query.');
     return res.status(400).send('Caminho do arquivo não fornecido.');
   }
 
   try {
-    const resolvedPath = path.resolve(filePath);
-    
+    const resolvedPath = path.resolve(decodeURIComponent(filePath));
+    console.log(`  [local-image] Servindo: "${resolvedPath}"`);
+
     // Verifica se o arquivo existe fisicamente no servidor
     if (!fs.existsSync(resolvedPath)) {
+      console.log(`  [local-image] ERRO 404: arquivo não encontrado em "${resolvedPath}"`);
       return res.status(404).send('Imagem não encontrada no servidor.');
     }
 
     // Extensões de imagem permitidas (segurança básica)
-    const allowedExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp'];
+    const allowedExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.PNG', '.JPG', '.JPEG'];
     const ext = path.extname(resolvedPath).toLowerCase();
     if (!allowedExtensions.includes(ext)) {
+      console.log(`  [local-image] ERRO 403: extensão não permitida "${ext}"`);
       return res.status(403).send('Formato de arquivo não permitido.');
     }
 
-    res.sendFile(resolvedPath);
+    // Determina o content-type correto
+    const mimeTypes = {
+      '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+      '.png': 'image/png', '.gif': 'image/gif',
+      '.webp': 'image/webp', '.svg': 'image/svg+xml',
+      '.bmp': 'image/bmp'
+    };
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=300');
+
+    // Usa createReadStream para compatibilidade total com caminhos Windows
+    const stream = fs.createReadStream(resolvedPath);
+    stream.on('error', (err) => {
+      console.log(`  [local-image] ERRO ao ler o arquivo: ${err.message}`);
+      if (!res.headersSent) res.status(500).send('Erro ao ler o arquivo.');
+    });
+    stream.pipe(res);
+
   } catch (err) {
+    console.log(`  [local-image] EXCEÇÃO: ${err.message}`);
     res.status(500).send('Erro interno ao servir a imagem.');
   }
 });
