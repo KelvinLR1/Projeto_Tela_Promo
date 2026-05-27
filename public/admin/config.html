@@ -130,6 +130,12 @@
 
                             <div class="form-stack">
                                 <div class="field">
+                                    <label for="localImagesPath">Caminho das Imagens Locais (IDs dos produtos)</label>
+                                    <input type="text" id="localImagesPath" placeholder="Ex: C:\FotosProdutos">
+                                    <p class="hint">Caso os produtos não tenham imagem cadastrada no banco, o sistema buscará um arquivo com o ID (ex: <code>15.jpg</code>, <code>15.png</code>) nesta pasta.</p>
+                                </div>
+
+                                <div class="field">
                                     <label for="dbQuery">Consulta SQL</label>
                                     <textarea id="dbQuery" rows="8" placeholder="SELECT nome_produto, preco_anterior, preco_atual, link_imagem, data_validade FROM promocoes"></textarea>
                                 </div>
@@ -236,12 +242,6 @@
                             </div>
 
                             <div class="form-stack">
-                                <div class="field">
-                                    <label for="localImagesPath">Caminho das Imagens Locais (IDs dos produtos)</label>
-                                    <input type="text" id="localImagesPath" placeholder="Ex: C:\FotosProdutos">
-                                    <p class="hint">Caso os produtos não tenham imagem cadastrada no banco, o sistema buscará um arquivo com o ID (ex: <code>15.jpg</code>, <code>15.png</code>) nesta pasta.</p>
-                                </div>
-
                                 <div class="split-fields split-fields-equal">
                                     <div class="field">
                                         <label for="displayTitle">Título principal da tela</label>
