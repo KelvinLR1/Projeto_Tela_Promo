@@ -168,8 +168,14 @@ async function fetchPromotions() {
             currentPage = 0;
             vitrineActiveIndex = 0;
             updateCarousel();
-        } else if (carouselContainer.querySelector('.status-message')) {
-            renderCurrentPage();
+        } else {
+            // Dados iguais: re-renderiza o carrossel apenas se havia mensagem de erro,
+            // mas sempre atualiza os timestamps de imagens locais para refletir arquivos substituídos
+            if (carouselContainer.querySelector('.status-message')) {
+                renderCurrentPage();
+            } else {
+                refreshLocalImageTimestamps();
+            }
         }
     } catch (error) {
         console.error('Falha ao buscar promocoes:', error);
@@ -267,6 +273,18 @@ function setProductImage(imgElement, imgWrapper, imageUrl) {
     } else {
         showImageFallback(imgElement, imgWrapper);
     }
+}
+
+// Atualiza o timestamp de todas as imagens locais visíveis sem re-renderizar o DOM.
+// Chamada a cada ciclo de fetch quando os dados do banco não mudaram,
+// garantindo que arquivos de imagem substituídos na pasta apareçam automaticamente.
+function refreshLocalImageTimestamps() {
+    const now = Date.now();
+    carouselContainer.querySelectorAll('img[src*="/api/local-image"]').forEach(img => {
+        const baseUrl = img.src.replace(/[?&]_t=\d+/, '');
+        const separator = baseUrl.includes('?') ? '&' : '?';
+        img.src = `${baseUrl}${separator}_t=${now}`;
+    });
 }
 
 function renderStatusMessage(title, detail) {
