@@ -138,3 +138,18 @@ button:active {
     transform: translateY(0);
     opacity: 1;
 }
+
+.back-link {
+    display: inline-block;
+    margin-top: 25px;
+    font-size: 0.9rem;
+    color: #b0bec5;
+    text-decoration: none;
+    transition: color 0.3s ease;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    color: #fbc02d;
+    text-decoration: underline;
+}

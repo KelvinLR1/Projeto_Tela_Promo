@@ -270,29 +270,18 @@ modalOverlay.addEventListener('click', (e) => {
 
 document.getElementById('configForm').addEventListener('submit', async (event) => {
     event.preventDefault();
-    const done = setButtonBusy(event.submitter, 'Salvando');
+    const done = setButtonBusy(event.submitter, 'Salvando...');
+    showToast('Salvando todas as configurações...', 'info');
 
     try {
-        await postJson('/api/config/save', getFormData());
-        showToast('Configuracoes de conexao salvas.', 'success');
+        await Promise.all([
+            postJson('/api/config/save', getFormData()),
+            postJson('/api/config/display/save', getDisplayFormData())
+        ]);
+        showToast('Todas as configurações foram salvas.', 'success');
         updateSummary();
     } catch (err) {
-        showToast(`Erro ao salvar conexao: ${err.message}`, 'error');
-    } finally {
-        done();
-    }
-});
-
-document.getElementById('displayForm').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const done = setButtonBusy(event.submitter, 'Salvando');
-
-    try {
-        await postJson('/api/config/display/save', getDisplayFormData());
-        showToast('Visual salvo com sucesso.', 'success');
-        updateSummary();
-    } catch (err) {
-        showToast(`Erro ao salvar visual: ${err.message}`, 'error');
+        showToast(`Erro ao salvar: ${err.message}`, 'error');
     } finally {
         done();
     }
@@ -329,3 +318,29 @@ fields.displayFetchInterval.addEventListener('input', updateSummary);
 initLayoutOptions();
 loadCurrentConfig();
 loadDisplayConfig();
+
+// Logica de alternancia de abas
+function initTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetTab = btn.dataset.tab;
+
+            tabButtons.forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-selected', 'false');
+            });
+            tabPanes.forEach(p => p.classList.remove('active'));
+
+            btn.classList.add('active');
+            btn.setAttribute('aria-selected', 'true');
+            
+            const pane = document.getElementById(`pane-${targetTab}`);
+            if (pane) pane.classList.add('active');
+        });
+    });
+}
+
+initTabs();
