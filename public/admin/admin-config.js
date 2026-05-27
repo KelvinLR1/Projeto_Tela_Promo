@@ -316,26 +316,24 @@ fields.dbType.addEventListener('change', applyDbDefaults);
 fields.displayFetchInterval.addEventListener('input', updateSummary);
 
 document.getElementById('btnRestoreDefaults').addEventListener('click', () => {
-    if (confirm('Deseja restaurar as configurações visuais para os valores padrão de fábrica?')) {
-        fields.displayTitle.value = 'OFERTAS IMPERDIVEIS';
-        fields.displayFooter.value = 'Aproveite! Promocoes validas enquanto durarem os estoques.';
-        fields.displayFetchInterval.value = 30;
-        fields.displayCarouselInterval.value = 10;
-        fields.displayVitrineInterval.value = 6;
+    fields.displayTitle.value = 'OFERTAS IMPERDIVEIS';
+    fields.displayFooter.value = 'Aproveite! Promocoes validas enquanto durarem os estoques.';
+    fields.displayFetchInterval.value = 30;
+    fields.displayCarouselInterval.value = 10;
+    fields.displayVitrineInterval.value = 6;
 
-        // Força atualização visual dos color pickers via dispatchEvent
-        const setColor = (field, value) => {
-            field.value = value;
-            field.dispatchEvent(new Event('input', { bubbles: true }));
-            field.dispatchEvent(new Event('change', { bubbles: true }));
-        };
-        setColor(fields.displayPrimaryColor, '#d32f2f');
-        setColor(fields.displayAccentColor, '#fbc02d');
-        setColor(fields.displayBackgroundColor, '#111111');
+    const setColor = (field, value) => {
+        if (!field) return;
+        field.value = value;
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    setColor(fields.displayPrimaryColor, '#d32f2f');
+    setColor(fields.displayAccentColor, '#fbc02d');
+    setColor(fields.displayBackgroundColor, '#111111');
 
-        showToast('Padrão de fábrica aplicado. Clique em Salvar para gravar.', 'info');
-        updateSummary();
-    }
+    showToast('Padrão de fábrica aplicado. Clique em Salvar para gravar.', 'info');
+    updateSummary();
 });
 
 initLayoutOptions();

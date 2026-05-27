@@ -699,8 +699,14 @@ app.post('/api/config/test-query', cookieAuth, async (req, res) => {
 // Salva as novas configurações no .env e atualiza as conexões em tempo de execução
 function envLine(key, value) {
   const raw = String(value ?? '');
+  // Valores simples sem caracteres especiais ficam sem aspas
   if (/^[A-Za-z0-9_./:@-]*$/.test(raw)) {
     return `${key}=${raw}`;
+  }
+  // Caminhos Windows com barras invertidas usam aspas SIMPLES (dotenv lê literalmente,
+  // sem processar escapes como \\→\ que JSON.stringify causaria)
+  if (raw.includes('\\')) {
+    return `${key}='${raw}'`;
   }
   return `${key}=${JSON.stringify(raw)}`;
 }
