@@ -123,9 +123,27 @@ function sanitizeColor(value, fallback) {
   return /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback;
 }
 
+function sanitizeWindowsPath(p) {
+  let cleaned = String(p || '').trim();
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  // Remove escapes adicionados indevidamente (como \\\\ -> \\ ou \\ -> \)
+  // Mantém prefixo UNC se houver (ex: \\host\pasta)
+  if (cleaned.startsWith('\\\\')) {
+    cleaned = '\\\\' + cleaned.substring(2).replace(/\\+/g, '\\');
+  } else {
+    cleaned = cleaned.replace(/\\+/g, '\\');
+  }
+  return cleaned;
+}
+
 function getDisplayConfig() {
   return {
-    localImagesPath: process.env.LOCAL_IMAGES_PATH || '',
+    localImagesPath: sanitizeWindowsPath(process.env.LOCAL_IMAGES_PATH),
     title: process.env.DISPLAY_TITLE || 'OFERTAS IMPERDIVEIS',
     footerText: process.env.DISPLAY_FOOTER_TEXT || 'Aproveite! Promocoes validas enquanto durarem os estoques.',
     fetchInterval: clampNumber(process.env.DISPLAY_FETCH_INTERVAL, 30000, 5000, 300000),
@@ -276,13 +294,7 @@ function processProductRows(rows) {
       const extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.JPG', '.JPEG', '.PNG', '.WEBP', '.GIF', '.SVG'];
       const searchDirs = [];
       
-      let localPath = (process.env.LOCAL_IMAGES_PATH || '').trim();
-      if (localPath.startsWith('"') && localPath.endsWith('"')) {
-        localPath = localPath.slice(1, -1).trim();
-      }
-      if (localPath.startsWith("'") && localPath.endsWith("'")) {
-        localPath = localPath.slice(1, -1).trim();
-      }
+      let localPath = sanitizeWindowsPath(process.env.LOCAL_IMAGES_PATH);
 
       console.log(`◇ [IMAGENS LOCAIS] Buscando arquivo para ID "${productId}". Pasta: "${localPath || 'não configurada'}"`);
 
@@ -807,7 +819,7 @@ app.post('/api/config/display/save', cookieAuth, (req, res) => {
       backgroundColor
     } = req.body;
 
-    process.env.LOCAL_IMAGES_PATH = String(localImagesPath || '').trim();
+    process.env.LOCAL_IMAGES_PATH = sanitizeWindowsPath(localImagesPath);
 
     process.env.DISPLAY_TITLE = String(title || 'OFERTAS IMPERDIVEIS').trim();
     process.env.DISPLAY_FOOTER_TEXT = String(footerText || 'Aproveite! Promocoes validas enquanto durarem os estoques.').trim();
