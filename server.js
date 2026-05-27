@@ -247,16 +247,37 @@ async function getDbConnection() {
 // Helper para processar resultados e converter caminhos absolutos locais, formatar datas e sanitizar preços
 function processProductRows(rows) {
   if (!Array.isArray(rows)) return [];
-  return rows.map(r => {
+  return rows.map(originalRow => {
+    // Normalizar chaves para caixa baixa (evita problemas com maiúsculas/minúsculas vindas do SQL)
+    const r = {};
+    for (const key of Object.keys(originalRow)) {
+      r[key.toLowerCase()] = originalRow[key];
+    }
+
     // 1. Tratamento do link de imagem
     let link = r.link_imagem || '';
+    if (typeof link === 'string') {
+      link = link.trim();
+      if (link.toLowerCase() === 'null' || link.toLowerCase() === 'undefined') {
+        link = '';
+      }
+    }
     
     // Se não houver link no banco, tenta buscar pelo ID na pasta local configurada ou na pasta padrão do projeto
-    if (!link && r.id) {
+    if (!link && r.id !== undefined && r.id !== null) {
       const extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
       const searchDirs = [];
-      if (process.env.LOCAL_IMAGES_PATH) {
-        searchDirs.push({ dir: process.env.LOCAL_IMAGES_PATH, isCustom: true });
+      
+      let localPath = (process.env.LOCAL_IMAGES_PATH || '').trim();
+      if (localPath.startsWith('"') && localPath.endsWith('"')) {
+        localPath = localPath.slice(1, -1).trim();
+      }
+      if (localPath.startsWith("'") && localPath.endsWith("'")) {
+        localPath = localPath.slice(1, -1).trim();
+      }
+
+      if (localPath) {
+        searchDirs.push({ dir: path.normalize(localPath), isCustom: true });
       }
       searchDirs.push({ dir: IMAGES_DIR, isCustom: false });
 
