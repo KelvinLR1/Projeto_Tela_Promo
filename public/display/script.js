@@ -255,7 +255,15 @@ function setProductImage(imgElement, imgWrapper, imageUrl) {
         imgElement.alt = 'Imagem do produto';
         imgElement.loading = 'eager';
         imgElement.onerror = () => showImageFallback(imgElement, imgWrapper);
-        imgElement.src = imageUrl;
+
+        // Adiciona timestamp às imagens locais para evitar cache do browser
+        // quando o arquivo é substituído por outro com o mesmo nome
+        if (imageUrl.includes('/api/local-image')) {
+            const separator = imageUrl.includes('?') ? '&' : '?';
+            imgElement.src = `${imageUrl}${separator}_t=${Date.now()}`;
+        } else {
+            imgElement.src = imageUrl;
+        }
     } else {
         showImageFallback(imgElement, imgWrapper);
     }
