@@ -718,3 +718,36 @@ function nextPage() {
 
 init();
 
+// Transição de entrada e captura de links
+function setupTransitions() {
+    requestAnimationFrame(() => {
+        document.body.classList.add('page-loaded');
+    });
+
+    // Captura links locais (como o logo para voltar à tela principal)
+    document.querySelectorAll("a").forEach(link => {
+        if (
+            link.hostname === window.location.hostname &&
+            !link.hash &&
+            link.getAttribute("target") !== "_blank" &&
+            !link.href.startsWith("javascript:")
+        ) {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetUrl = link.href;
+                document.body.classList.add('page-exit');
+                setTimeout(() => {
+                    window.location.href = targetUrl;
+                }, 350);
+            });
+        }
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupTransitions);
+} else {
+    setupTransitions();
+}
+
+

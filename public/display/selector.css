@@ -185,3 +185,21 @@ p {
         min-height: 142px;
     }
 }
+
+/* Transições de página fluidas */
+body {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+body.page-loaded {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+body.page-exit {
+    opacity: 0;
+    transform: translateY(-12px);
+}
+

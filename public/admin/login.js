@@ -1,6 +1,32 @@
 const loginForm = document.getElementById('loginForm');
 const btnLogin = document.getElementById('btnLogin');
 
+// Executa animação de entrada e configura transição
+function setupTransitions() {
+    requestAnimationFrame(() => {
+        document.body.classList.add('page-loaded');
+    });
+
+    // Captura o link de voltar
+    const backLink = document.querySelector('.back-link');
+    if (backLink) {
+        backLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetUrl = backLink.href;
+            document.body.classList.add('page-exit');
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 350);
+        });
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupTransitions);
+} else {
+    setupTransitions();
+}
+
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -20,7 +46,11 @@ loginForm.addEventListener('submit', async (e) => {
         if (response.ok) {
             const result = await response.json();
             if (result.success) {
-                window.location.href = '/config';
+                // Transição suave para o painel
+                document.body.classList.add('page-exit');
+                setTimeout(() => {
+                    window.location.href = '/config';
+                }, 350);
                 return;
             }
         }
@@ -43,3 +73,4 @@ function showToast(message) {
         toast.classList.remove('show');
     }, 4000);
 }
+

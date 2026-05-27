@@ -306,7 +306,12 @@ document.getElementById('layoutLinks').addEventListener('click', (event) => {
 document.getElementById('btnLogout').addEventListener('click', async () => {
     try {
         const response = await fetch('/api/logout', { method: 'POST' });
-        if (response.ok) window.location.href = '/login';
+        if (response.ok) {
+            document.body.classList.add('page-exit');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 350);
+        }
     } catch (err) {
         showToast('Erro ao encerrar a sessao.', 'error');
     }
@@ -394,3 +399,37 @@ function initTabs() {
 }
 
 initTabs();
+
+// Transição de entrada e captura de links
+function setupTransitions() {
+    requestAnimationFrame(() => {
+        document.body.classList.add('page-loaded');
+    });
+
+    // Captura links locais do painel para saída suave
+    document.querySelectorAll("a").forEach(link => {
+        if (
+            link.hostname === window.location.hostname &&
+            !link.hash &&
+            link.getAttribute("target") !== "_blank" &&
+            !link.href.startsWith("javascript:")
+        ) {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetUrl = link.href;
+                document.body.classList.add('page-exit');
+                setTimeout(() => {
+                    window.location.href = targetUrl;
+                }, 350);
+            });
+        }
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupTransitions);
+} else {
+    setupTransitions();
+}
+
+
