@@ -315,25 +315,54 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
 fields.dbType.addEventListener('change', applyDbDefaults);
 fields.displayFetchInterval.addEventListener('input', updateSummary);
 
-document.getElementById('btnRestoreDefaults').addEventListener('click', () => {
-    fields.displayTitle.value = 'OFERTAS IMPERDIVEIS';
-    fields.displayFooter.value = 'Aproveite! Promocoes validas enquanto durarem os estoques.';
-    fields.displayFetchInterval.value = 30;
-    fields.displayCarouselInterval.value = 10;
-    fields.displayVitrineInterval.value = 6;
+document.getElementById('btnRestoreDefaults').addEventListener('click', function () {
+    if (this.dataset.confirming === 'true') {
+        // Segundo clique: Aplica as restaurações
+        this.dataset.confirming = 'false';
+        this.textContent = 'Restaurar Padrões';
+        this.style.background = '';
+        this.style.borderColor = '';
+        this.style.color = '';
 
-    const setColor = (field, value) => {
-        if (!field) return;
-        field.value = value;
-        field.dispatchEvent(new Event('input', { bubbles: true }));
-        field.dispatchEvent(new Event('change', { bubbles: true }));
-    };
-    setColor(fields.displayPrimaryColor, '#d32f2f');
-    setColor(fields.displayAccentColor, '#fbc02d');
-    setColor(fields.displayBackgroundColor, '#111111');
+        fields.displayTitle.value = 'OFERTAS IMPERDIVEIS';
+        fields.displayFooter.value = 'Aproveite! Promocoes validas enquanto durarem os estoques.';
+        fields.displayFetchInterval.value = 30;
+        fields.displayCarouselInterval.value = 10;
+        fields.displayVitrineInterval.value = 6;
 
-    showToast('Padrão de fábrica aplicado. Clique em Salvar para gravar.', 'info');
-    updateSummary();
+        const setColor = (field, value) => {
+            if (!field) return;
+            field.value = value;
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        setColor(fields.displayPrimaryColor, '#d32f2f');
+        setColor(fields.displayAccentColor, '#fbc02d');
+        setColor(fields.displayBackgroundColor, '#111111');
+
+        showToast('Padrões de fábrica aplicados temporariamente. Clique em Salvar para gravar.', 'info');
+        updateSummary();
+    } else {
+        // Primeiro clique: Inicia a confirmação visual
+        this.dataset.confirming = 'true';
+        this.textContent = 'Clique para Confirmar';
+        this.style.background = '#ff5252';
+        this.style.borderColor = '#ff5252';
+        this.style.color = '#ffffff';
+
+        // Timer para resetar o botão caso não haja o segundo clique em 4 segundos
+        const btn = this;
+        window.clearTimeout(btn.confirmTimeout);
+        btn.confirmTimeout = window.setTimeout(() => {
+            if (btn.dataset.confirming === 'true') {
+                btn.dataset.confirming = 'false';
+                btn.textContent = 'Restaurar Padrões';
+                btn.style.background = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }
+        }, 4000);
+    }
 });
 
 initLayoutOptions();
