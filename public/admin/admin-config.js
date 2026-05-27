@@ -315,6 +315,22 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
 fields.dbType.addEventListener('change', applyDbDefaults);
 fields.displayFetchInterval.addEventListener('input', updateSummary);
 
+document.getElementById('btnRestoreDefaults').addEventListener('click', () => {
+    if (confirm('Deseja redefinir as configurações visuais desta aba para os valores padrão?')) {
+        fields.displayTitle.value = 'OFERTAS IMPERDIVEIS';
+        fields.displayFooter.value = 'Aproveite! Promocoes validas enquanto durarem os estoques.';
+        fields.displayPrimaryColor.value = '#d32f2f';
+        fields.displayAccentColor.value = '#fbc02d';
+        fields.displayBackgroundColor.value = '#111111';
+        fields.displayFetchInterval.value = 30;
+        fields.displayCarouselInterval.value = 10;
+        fields.displayVitrineInterval.value = 6;
+        
+        showToast('Valores padrão aplicados (clique em Salvar para gravar).', 'info');
+        updateSummary();
+    }
+});
+
 initLayoutOptions();
 loadCurrentConfig();
 loadDisplayConfig();
