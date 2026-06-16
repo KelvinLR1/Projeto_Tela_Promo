@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ofertas do Dia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-container">
+        <header class="header">
+            <a href="/" class="header-logo-left" title="Voltar à tela principal"><img src="/logo.png" alt="Logo"></a>
+            <h1 class="blink-text">OFERTAS IMPERDIVEIS</h1>
+            <a href="/" class="header-logo-right" title="Voltar à tela principal"><img src="/logo.png" alt="Logo"></a>
+        </header>
+
+        <div id="carousel-container" class="carousel-container"></div>
+
+        <footer class="footer">
+            <p>Aproveite! Promocoes validas enquanto durarem os estoques.</p>
+        </footer>
+    </div>
+
+    <template id="product-template">
+        <div class="product-card">
+            <div class="product-image-wrapper">
+                <img src="" alt="Produto" class="product-image">
+            </div>
+            <div class="product-info">
+                <h2 class="product-name">Nome do Produto</h2>
+                <span class="validity-badge" style="display: none;"></span>
+                <div class="prices">
+                    <span class="old-price">R$ 0,00</span>
+                    <span class="new-price">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="script.js"></script>
+</body>
+</html>

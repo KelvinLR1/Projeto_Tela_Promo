@@ -1,26 +1,42 @@
 SELECT
-	p.nome AS nome_produto,
-	CASE
+    p.nome AS nome_produto,
+    CASE
         WHEN pp.preco_promocional_varejo <> 0 THEN pp.preco_promocional_varejo
         WHEN pp.preco_promocional_atacado <> 0 THEN pp.preco_promocional_atacado
         WHEN pp.percentual_promocional_varejo <> 0 THEN p.preco_venda - (p.preco_venda * (pp.percentual_promocional_varejo / 100))
-        WHEN pp.percentual_promocional_atacado <> 0 THEN p.preco_venda - (p.preco_venda * (pp.percentual_promocional_atacado / 100))
+        WHEN pp.percentual_promocional_atacado <> 0 THEN p.preco_venda_atacado - (p.preco_venda_atacado * (pp.percentual_promocional_atacado / 100))
         ELSE p.preco_venda
     END AS preco_atual,
     pp.id_produto AS id,
     p.preco_venda AS preco_anterior,
-	prodi.caminho_imagem AS link_imagem,
-	null as data_validade,
-	promo.data_inicial as data_inicio,
-	promo.data_final as data_fim,
-	'3' as dias_semana,
-	'08:00' as hora_inicio,
-	'17:05' as hora_fim,
-	null AS texto_validade
+    prodi.caminho_imagem AS link_imagem,
+    null as data_validade,
+    promo.data_inicial as data_inicio,
+    promo.data_final as data_fim,
+    CASE 
+        -- Se TODOS os dias forem igual a 1, retorna vazio ''
+        WHEN aplicar_domingo = 1 AND aplicar_segunda = 1 AND aplicar_terca = 1 
+         AND aplicar_quarta = 1  AND aplicar_quinta = 1  AND aplicar_sexta = 1 
+         AND aplicar_sabado = 1 THEN ''
+        
+        -- Caso contrário, traz a lista separada por vírgula normalmente
+        ELSE CONCAT_WS(',',
+            CASE WHEN aplicar_domingo = 1 THEN '0' END,
+            CASE WHEN aplicar_segunda = 1 THEN '1' END,
+            CASE WHEN aplicar_terca   = 1 THEN '2' END,
+            CASE WHEN aplicar_quarta  = 1 THEN '3' END,
+            CASE WHEN aplicar_quinta  = 1 THEN '4' END,
+            CASE WHEN aplicar_sexta   = 1 THEN '5' END,
+            CASE WHEN aplicar_sabado  = 1 THEN '6' END
+        )
+    END AS dias_semana,
+    promo.hora_inicio as hora_inicio,
+    promo.hora_fim as hora_fim,
+    null AS texto_validade
 FROM 
     promocao_produto pp
     LEFT JOIN produto p ON p.id_produto = pp.id_produto
-	LEFT JOIN promocao promo on promo.id_promocao = pp.id_promocao
+    LEFT JOIN promocao promo on promo.id_promocao = pp.id_promocao
     LEFT JOIN (
         SELECT 
             id_produto,
@@ -32,13 +48,12 @@ FROM
         FROM produto_imagem
     ) prodi ON prodi.id_produto = p.id_produto AND prodi.rn = 1
 
-	/*
-	0 = Domingo
-	1 = Segunda-feira
-	2 = Terça-feira
-	3 = Quarta-feira
-	4 = Quinta-feira
-	5 = Sexta-feira
-	6 = Sábado
-	*/
-
+    /*
+    0 = Domingo
+    1 = Segunda-feira
+    2 = Terça-feira
+    3 = Quarta-feira
+    4 = Quinta-feira
+    5 = Sexta-feira
+    6 = Sábado
+    */

@@ -94,8 +94,11 @@ function applyDisplayConfig(config) {
     vitrineItemInterval = Number(config.vitrineItemInterval) || vitrineItemInterval;
 
     document.documentElement.style.setProperty('--promo-primary', config.primaryColor || '#d32f2f');
+    document.documentElement.style.setProperty('--promo-header-mid', config.headerMidColor || '#f44336');
     document.documentElement.style.setProperty('--promo-accent', config.accentColor || '#fbc02d');
     document.documentElement.style.setProperty('--promo-background', config.backgroundColor || '#111111');
+    document.documentElement.style.setProperty('--promo-bg-center', config.bgCenterColor || '#222222');
+    document.documentElement.style.setProperty('--promo-footer-bg', config.footerBgColor || '#111111');
 
     applyLayout(requestedLayout || config.defaultLayout || 'padrao');
 }
@@ -198,7 +201,7 @@ function filterPromotionsIfNecessary(promotions) {
         if (item.dias_semana && String(item.dias_semana).trim() !== '') {
             const todayDay = now.getDay(); // 0 (Domingo) a 6 (Sábado)
             const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-            const dayShortNames = ['dom', 'seg', 'ter', 'qui', 'sex', 'sab'];
+            const dayShortNames = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
 
             const rawDays = String(item.dias_semana)
                 .split(',')
@@ -443,7 +446,7 @@ function isLastActiveDay(item) {
         if (item.dias_semana && String(item.dias_semana).trim() !== '') {
             const checkDayOfWeek = checkDate.getDay();
             const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-            const dayShortNames = ['dom', 'seg', 'ter', 'qui', 'sex', 'sab'];
+            const dayShortNames = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
 
             const rawDays = String(item.dias_semana)
                 .split(',')

@@ -12,7 +12,9 @@ body {
     font-family: 'Poppins', sans-serif;
     color: #fff;
     width: 100vw;
+    /* dvh: usa a altura "dinâmica" do viewport — considera a barra do browser */
     height: 100vh;
+    height: 100dvh;
 }
 
 /* CONTAINER PRINCIPAL (FULL HD 1920x1080) */
@@ -22,13 +24,13 @@ body {
     height: 100%;
     width: 100%;
     /* Fundo com gradiente radial para um visual premium */
-    background: radial-gradient(circle at center, #222 0%, var(--promo-background, #000) 100%);
+    background: radial-gradient(circle at center, var(--promo-bg-center, #222222) 0%, var(--promo-background, #000) 100%);
 }
 
 /* HEADER */
 .header {
     position: relative;
-    background: linear-gradient(90deg, var(--promo-primary, #d32f2f), #f44336, var(--promo-primary, #d32f2f));
+    background: linear-gradient(90deg, var(--promo-primary, #d32f2f), var(--promo-header-mid, #f44336), var(--promo-primary, #d32f2f));
     color: #fff;
     display: flex;
     align-items: center;
@@ -87,7 +89,7 @@ body {
 
 /* FOOTER */
 .footer {
-    background-color: #111;
+    background-color: var(--promo-footer-bg, #111111);
     border-top: 4px solid var(--promo-accent, #fbc02d);
     text-align: center;
     padding: 1.5vh 0;
@@ -109,8 +111,8 @@ body {
     flex-wrap: wrap;
     justify-content: center;
     align-content: center;
-    gap: 3vw;
-    padding: 2.5vh 4vw; /* Reduzido de 4vh para 2.5vh para dar folga no rodapé */
+    gap: 2vh 3vw;
+    padding: 2vh 4vw;
     opacity: 1;
     transition: opacity 0.8s ease-in-out; /* Transição suave de Fade */
 }
@@ -148,7 +150,7 @@ body {
     background: linear-gradient(145deg, #ffffff, #f0f0f0);
     border-radius: 20px;
     width: calc(45vw - 1.5vw); /* Calcula pra caber 2 por linha com gap */
-    height: 34vh; /* Reduzido de 38vh para 34vh para caber perfeitamente na tela com folga */
+    height: 34vh;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -158,6 +160,14 @@ body {
     transition: transform 0.3s ease;
     animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
+
+/* Layout padrão: altura dinâmica para caber 2 linhas com ou sem barra do navegador */
+.layout-padrao .product-card {
+    height: calc((100dvh - 27.5dvh) / 2);
+    max-height: 38vh;
+    min-height: 22vh;
+}
+
 
 /* Destaque visual: Borda amarela */
 .product-card {

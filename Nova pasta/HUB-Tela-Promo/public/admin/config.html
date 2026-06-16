@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuracoes - Signage Supermercado</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/admin/admin-config.css">
+</head>
+<body>
+    <main class="admin-shell">
+        <header class="topbar">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <img src="/logo.png" alt="Logo" class="topbar-logo" style="height: 60px; width: auto; object-fit: contain; flex-shrink: 0;">
+                <div>
+                    <p class="eyebrow">Painel administrativo</p>
+                    <h1>Configuracoes da tela</h1>
+                    <p class="subtitle">Ajuste conexao, visual e links de exibicao em um unico lugar.</p>
+                </div>
+            </div>
+            <div class="topbar-actions">
+                <a class="ghost-link" href="/">Voltar para Tela Principal</a>
+                <a class="ghost-link" href="/" target="_blank" rel="noopener">Abrir em nova guia</a>
+                <button type="button" class="danger-button" id="btnLogout">Sair</button>
+            </div>
+        </header>
+
+        <section class="summary-grid" aria-label="Resumo dos acessos">
+
+            <article class="summary-card">
+                <span class="summary-label">Banco</span>
+                <strong id="summaryDb">MySQL</strong>
+            </article>
+            <article class="summary-card">
+                <span class="summary-label">Atualizacao</span>
+                <strong id="summaryFetch">30s</strong>
+            </article>
+        </section>
+
+        <form id="configForm">
+            <div class="settings-container">
+                <!-- Abas de Navegação -->
+                <nav class="settings-tabs" role="tablist">
+                    <button type="button" class="tab-button active" data-tab="database" role="tab" aria-selected="true">
+                        <span>🗄️</span> Conexão do Banco
+                    </button>
+                    <button type="button" class="tab-button" data-tab="sql" role="tab" aria-selected="false">
+                        <span>🔍</span> Consulta SQL
+                    </button>
+                    <button type="button" class="tab-button" data-tab="appearance" role="tab" aria-selected="false">
+                        <span>🎨</span> Visual & Tempos
+                    </button>
+                    <button type="button" class="tab-button" data-tab="tvs" role="tab" aria-selected="false">
+                        <span>📺</span> Canais de Exibição
+                    </button>
+                </nav>
+
+                <!-- Conteúdo das Abas -->
+                <div class="tab-panes">
+                    
+                    <!-- ABA 1: CONEXÃO -->
+                    <div class="tab-pane active" id="pane-database" role="tabpanel">
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Banco de dados</p>
+                                    <h2>Dados de conexão</h2>
+                                </div>
+                                <button type="button" class="secondary-button" id="btnTest">Testar conexão</button>
+                            </div>
+
+                            <div class="form-stack">
+                                <div class="field">
+                                    <label for="dbType">Tipo do Banco</label>
+                                    <select id="dbType" required>
+                                        <option value="mysql">MySQL</option>
+                                        <option value="postgres">PostgreSQL</option>
+                                        <option value="sqlserver">Microsoft SQL Server</option>
+                                    </select>
+                                </div>
+
+                                <div class="split-fields">
+                                    <div class="field">
+                                        <label for="host">Servidor / IP</label>
+                                        <input type="text" id="host" required placeholder="127.0.0.1">
+                                    </div>
+                                    <div class="field compact-field">
+                                        <label for="port">Porta</label>
+                                        <input type="number" id="port" required placeholder="3306">
+                                    </div>
+                                </div>
+
+                                <div class="field" id="instanceField" style="display:none">
+                                    <label for="dbInstance">Nome da instância (SQL Server)</label>
+                                    <input type="text" id="dbInstance" placeholder="Ex: SQLEXPRESS ou MSSQLSERVER">
+                                    <p class="hint">Opcional. Use somente se seu SQL Server usa instância nomeada. Quando preenchido, a <strong>Porta</strong> acima é ignorada.</p>
+                                </div>
+
+                                <div class="split-fields">
+                                    <div class="field">
+                                        <label for="database">Nome do banco</label>
+                                        <input type="text" id="database" required placeholder="supermercado_db">
+                                    </div>
+                                    <div class="field">
+                                        <label for="user">Usuário</label>
+                                        <input type="text" id="user" required placeholder="root">
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <label for="password">Senha</label>
+                                    <input type="password" id="password" placeholder="Senha do banco">
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- ABA 2: CONSULTA SQL -->
+                    <div class="tab-pane" id="pane-sql" role="tabpanel">
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Produtos</p>
+                                    <h2>Consulta SQL customizada</h2>
+                                </div>
+                                <button type="button" class="secondary-button" id="btnTestQuery">Testar consulta</button>
+                            </div>
+
+                            <div class="form-stack">
+                                <div class="field">
+                                    <label for="localImagesPath">Caminho das Imagens Locais (IDs dos produtos)</label>
+                                    <input type="text" id="localImagesPath" placeholder="Ex: C:\FotosProdutos">
+                                    <p class="hint">Caso os produtos não tenham imagem cadastrada no banco, o sistema buscará um arquivo com o ID (ex: <code>15.jpg</code>, <code>15.png</code>) nesta pasta.</p>
+                                </div>
+
+                                <div class="field">
+                                    <label for="dbQuery">Consulta SQL</label>
+                                    <textarea id="dbQuery" rows="8" placeholder="SELECT nome_produto, preco_anterior, preco_atual, link_imagem, data_validade FROM promocoes"></textarea>
+                                </div>
+
+                                <div class="sql-hint">
+                                    <p class="hint">Opcional. Se preenchida, sua consulta <strong>deve retornar os aliases exatos</strong> abaixo. Campos obrigatórios precisam estar no SELECT.</p>
+                                    <table class="col-ref">
+                                        <thead>
+                                            <tr>
+                                                <th>Coluna (alias)</th>
+                                                <th>Tipo</th>
+                                                <th>Uso</th>
+                                                <th>Descrição</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="required-row">
+                                                <td><code>nome_produto</code></td>
+                                                <td>TEXT</td>
+                                                <td><span class="badge-req">Obrigatório</span></td>
+                                                <td>Nome exibido no card</td>
+                                            </tr>
+                                            <tr class="required-row">
+                                                <td><code>preco_atual</code></td>
+                                                <td>DECIMAL</td>
+                                                <td><span class="badge-req">Obrigatório</span></td>
+                                                <td>Preço promocional em destaque</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>id</code></td>
+                                                <td>INTEGER</td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>ID do produto — Essencial para a busca de imagens locais por ID</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>preco_anterior</code></td>
+                                                <td>DECIMAL</td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Preço riscado (de por)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>link_imagem</code></td>
+                                                <td>TEXT</td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>URL completa ou caminho (ex: <em>https://...</em> ou <em>/imagens/foto.jpg</em>)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>data_validade</code></td>
+                                                <td>DATE <em>YYYY-MM-DD</em></td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Validade simples — exibe badge automática</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>data_inicio</code></td>
+                                                <td>DATE <em>YYYY-MM-DD</em></td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Início do período de oferta</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>data_fim</code></td>
+                                                <td>DATE <em>YYYY-MM-DD</em></td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Fim do período de oferta</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>dias_semana</code></td>
+                                                <td>TEXT <em>ex: 1,3,5</em></td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Dias válidos: 0=Dom … 6=Sáb, separados por vírgula</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>hora_inicio</code></td>
+                                                <td>TEXT <em>HH:MM</em></td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Hora de início da oferta</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>hora_fim</code></td>
+                                                <td>TEXT <em>HH:MM</em></td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Hora de término da oferta</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>texto_validade</code></td>
+                                                <td>TEXT</td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Texto livre para o badge (ex: &ldquo;SÓ HOJE&rdquo;). Substitui todas as regras de data/hora.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- ABA 3: APARÊNCIA & TEMPOS -->
+                    <div class="tab-pane" id="pane-appearance" role="tabpanel">
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Personalização</p>
+                                    <h2>Estilo visual e intervalos</h2>
+                                </div>
+                                <button type="button" class="secondary-button" id="btnRestoreDefaults" style="border-color: rgba(255, 82, 82, 0.3); color: #ff5252;" title="Restaura os valores visuais padrão de fábrica">Restaurar Padrões</button>
+                            </div>
+
+                            <div class="form-stack">
+                                <div class="split-fields split-fields-equal">
+                                    <div class="field">
+                                        <label for="displayTitle">Título principal da tela</label>
+                                        <input type="text" id="displayTitle" placeholder="OFERTAS IMPERDIVEIS">
+                                    </div>
+                                    <div class="field">
+                                        <label for="displayFooter">Texto do rodapé</label>
+                                        <input type="text" id="displayFooter" placeholder="Aproveite! Promocoes validas enquanto durarem os estoques.">
+                                    </div>
+                                </div>
+
+                                <div class="color-grid">
+                                    <label class="color-field" for="displayPrimaryColor">
+                                        <span>Cor Principal</span>
+                                        <input type="color" id="displayPrimaryColor">
+                                    </label>
+                                    <label class="color-field" for="displayAccentColor">
+                                        <span>Cor Destaque</span>
+                                        <input type="color" id="displayAccentColor">
+                                    </label>
+                                    <label class="color-field" for="displayBackgroundColor">
+                                        <span>Cor Fundo</span>
+                                        <input type="color" id="displayBackgroundColor">
+                                    </label>
+                                </div>
+
+                                <div class="settings-group">
+                                    <h3>Tempos e Intervalos</h3>
+                                    <div class="split-fields-3">
+                                        <div class="field">
+                                            <label for="displayCarouselInterval">Transição de Sliders (seg)</label>
+                                            <input type="number" id="displayCarouselInterval" min="3" step="1">
+                                        </div>
+                                        <div class="field">
+                                            <label for="displayFetchInterval">Atualizar Banco (seg)</label>
+                                            <input type="number" id="displayFetchInterval" min="5" step="1">
+                                        </div>
+                                        <div class="field">
+                                            <label for="displayVitrineInterval">Vitrine Lateral (seg)</label>
+                                            <input type="number" id="displayVitrineInterval" min="3" step="1">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="settings-group">
+                                    <h3>Regras de Exibição</h3>
+                                    <div class="field">
+                                        <label for="displayFilterActiveOnly">Exibição de Ofertas Especiais</label>
+                                        <select id="displayFilterActiveOnly">
+                                            <option value="false">Mostrar todas as promoções sempre (Padrão)</option>
+                                            <option value="true">Mostrar somente nos dias e horários vigentes (Ocultar quando fora da vigência)</option>
+                                        </select>
+                                        <p class="hint">Se ativado, ofertas que possuem limitação de dias da semana (ex: "segunda e quarta") ou faixas de horário/datas só serão mostradas quando estiverem ativas no momento. Se um produto não tiver limites de dia/horário definidos, ele continuará aparecendo sempre.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- ABA 4: CANAIS DE EXIBIÇÃO -->
+                    <div class="tab-pane" id="pane-tvs" role="tabpanel">
+                        <section class="panel links-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Canais</p>
+                                    <h2>Links de exibição por TV</h2>
+                                </div>
+                            </div>
+                            <div id="layoutLinks" class="layout-links"></div>
+                        </section>
+                    </div>
+
+                </div>
+
+                <!-- Rodapé Global -->
+                <div class="settings-footer">
+                    <p class="settings-footer-hint">💡 Todas as alterações feitas em qualquer aba serão salvas juntas.</p>
+                    <button type="submit" class="primary-button" id="btnSaveAll">Salvar Todas as Configurações</button>
+                </div>
+            </div>
+        </form>
+    </main>
+
+    <!-- Modal de Teste SQL -->
+    <div id="sqlTestModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Resultado do SQL (Max 15 linhas)</h2>
+                <button type="button" class="icon-button close-button" id="btnCloseModal" aria-label="Fechar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-container">
+                    <table id="sqlResultTable" class="data-table">
+                        <thead id="sqlResultHead"></thead>
+                        <tbody id="sqlResultBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="/admin/admin-config.js"></script>
+</body>
+</html>

@@ -12,6 +12,8 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const ADMIN_DIR = path.join(PUBLIC_DIR, 'admin');
 const DISPLAY_DIR = path.join(PUBLIC_DIR, 'display');
 const IMAGES_DIR = path.join(PUBLIC_DIR, 'imagens');
+const LOGO_PATH = path.join(DISPLAY_DIR, 'logo.png');
+const LOGO_DEFAULT_PATH = path.join(DISPLAY_DIR, 'logo.default.png');
 const SESSION_COOKIE_NAME = 'admin_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 2;
 const SESSION_SECRET = process.env.SESSION_SECRET || process.env.ADMIN_PASS || 'dev-session-secret';
@@ -151,8 +153,11 @@ function getDisplayConfig() {
     vitrineItemInterval: clampNumber(process.env.DISPLAY_VITRINE_ITEM_INTERVAL, 6000, 3000, 120000),
 
     primaryColor: sanitizeColor(process.env.DISPLAY_PRIMARY_COLOR, '#d32f2f'),
+    headerMidColor: sanitizeColor(process.env.DISPLAY_HEADER_MID_COLOR, '#f44336'),
     accentColor: sanitizeColor(process.env.DISPLAY_ACCENT_COLOR, '#fbc02d'),
     backgroundColor: sanitizeColor(process.env.DISPLAY_BACKGROUND_COLOR, '#111111'),
+    bgCenterColor: sanitizeColor(process.env.DISPLAY_BG_CENTER_COLOR, '#222222'),
+    footerBgColor: sanitizeColor(process.env.DISPLAY_FOOTER_BG_COLOR, '#111111'),
     filterActiveOnly: process.env.DISPLAY_FILTER_ACTIVE_ONLY === 'true'
   };
 }
@@ -182,8 +187,34 @@ app.get('/display', (req, res) => {
   res.sendFile(path.join(DISPLAY_DIR, 'display.html'));
 });
 
-app.use('/admin', express.static(ADMIN_DIR));
-app.use(express.static(DISPLAY_DIR));
+// /logo.png → sempre o logo padrão (usado na tela de configurações e seletor)
+app.get('/logo.png', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.sendFile(path.join(PUBLIC_DIR, 'logo.png'));
+});
+
+// /display-logo.png → logo personalizado da tela de promoções (fallback: padrão)
+app.get('/display-logo.png', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const customLogo = LOGO_PATH; // public/display/logo.png
+  const defaultLogo = path.join(PUBLIC_DIR, 'logo.png');
+  if (fs.existsSync(customLogo)) {
+    res.sendFile(customLogo);
+  } else {
+    res.sendFile(defaultLogo);
+  }
+});
+
+app.use('/admin', express.static(ADMIN_DIR, {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  }
+}));
+app.use(express.static(DISPLAY_DIR, {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  }
+}));
 
 app.use('/imagens', express.static(IMAGES_DIR));
 // Gerenciador de conexão dinâmico para múltiplos bancos de dados
@@ -750,8 +781,11 @@ function buildEnvContent() {
     envLine('DISPLAY_VITRINE_ITEM_INTERVAL', process.env.DISPLAY_VITRINE_ITEM_INTERVAL || '6000'),
 
     envLine('DISPLAY_PRIMARY_COLOR', process.env.DISPLAY_PRIMARY_COLOR || '#d32f2f'),
+    envLine('DISPLAY_HEADER_MID_COLOR', process.env.DISPLAY_HEADER_MID_COLOR || '#f44336'),
     envLine('DISPLAY_ACCENT_COLOR', process.env.DISPLAY_ACCENT_COLOR || '#fbc02d'),
     envLine('DISPLAY_BACKGROUND_COLOR', process.env.DISPLAY_BACKGROUND_COLOR || '#111111'),
+    envLine('DISPLAY_BG_CENTER_COLOR', process.env.DISPLAY_BG_CENTER_COLOR || '#222222'),
+    envLine('DISPLAY_FOOTER_BG_COLOR', process.env.DISPLAY_FOOTER_BG_COLOR || '#111111'),
     envLine('DISPLAY_FILTER_ACTIVE_ONLY', process.env.DISPLAY_FILTER_ACTIVE_ONLY || 'false'),
     ''
   ].join('\n');
@@ -778,7 +812,7 @@ app.post('/api/config/save', cookieAuth, async (req, res) => {
     process.env.DB_USER = user;
     process.env.DB_PASSWORD = password;
     process.env.DB_NAME = database;
-    process.env.DB_QUERY = cleanedQuery;
+    process.env.DB_QUERY = cleanedQuery.replace(/\t/g, '    ');
     saveEnvFile();
 
     // Derruba o pool antigo para recriar com a nova configuração na próxima requisição
@@ -817,8 +851,11 @@ app.post('/api/config/display/save', cookieAuth, (req, res) => {
       itemsVitrine,
       itemsSemFoto,
       primaryColor,
+      headerMidColor,
       accentColor,
       backgroundColor,
+      bgCenterColor,
+      footerBgColor,
       filterActiveOnly
     } = req.body;
 
@@ -834,12 +871,118 @@ app.post('/api/config/display/save', cookieAuth, (req, res) => {
     process.env.DISPLAY_ITEMS_VITRINE = String(clampNumber(itemsVitrine, 5, 1, 10));
     process.env.DISPLAY_ITEMS_SEM_FOTO = String(clampNumber(itemsSemFoto, 4, 1, 8));
     process.env.DISPLAY_PRIMARY_COLOR = sanitizeColor(primaryColor, '#d32f2f');
+    process.env.DISPLAY_HEADER_MID_COLOR = sanitizeColor(headerMidColor, '#f44336');
     process.env.DISPLAY_ACCENT_COLOR = sanitizeColor(accentColor, '#fbc02d');
     process.env.DISPLAY_BACKGROUND_COLOR = sanitizeColor(backgroundColor, '#111111');
+    process.env.DISPLAY_BG_CENTER_COLOR = sanitizeColor(bgCenterColor, '#222222');
+    process.env.DISPLAY_FOOTER_BG_COLOR = sanitizeColor(footerBgColor, '#111111');
     process.env.DISPLAY_FILTER_ACTIVE_ONLY = filterActiveOnly ? 'true' : 'false';
 
     saveEnvFile();
     res.json({ success: true, message: 'Configuracoes visuais salvas!', config: getDisplayConfig() });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Rota de upload do logo da empresa
+app.post('/api/logo/upload', cookieAuth, (req, res) => {
+  const contentType = req.headers['content-type'] || '';
+  if (!contentType.includes('multipart/form-data')) {
+    return res.status(400).json({ success: false, error: 'Content-Type deve ser multipart/form-data' });
+  }
+
+  // Extrai o boundary com regex (mais robusto que split)
+  const boundaryMatch = contentType.match(/boundary=([^\s;]+)/i);
+  if (!boundaryMatch) return res.status(400).json({ success: false, error: 'Boundary não encontrado' });
+  const boundary = boundaryMatch[1].trim();
+
+  const chunks = [];
+  req.on('data', chunk => chunks.push(chunk));
+  req.on('end', () => {
+    try {
+      const body = Buffer.concat(chunks);
+
+      // Localiza a primeira linha de boundary: --boundary\r\n
+      const firstDelim = Buffer.from('--' + boundary + '\r\n');
+      const firstDelimPos = body.indexOf(firstDelim);
+      if (firstDelimPos === -1) {
+        console.error('[LOGO] Boundary não encontrado no body. Tamanho:', body.length);
+        return res.status(400).json({ success: false, error: 'Boundary não encontrado no corpo da requisição' });
+      }
+
+      // Busca o \r\n\r\n DEPOIS do início do boundary (separa headers do conteúdo)
+      const headerStart = firstDelimPos + firstDelim.length;
+      const CRLF2 = Buffer.from('\r\n\r\n');
+      const headerEnd = body.indexOf(CRLF2, headerStart);
+      if (headerEnd === -1) {
+        return res.status(400).json({ success: false, error: 'Cabeçalhos do arquivo não encontrados' });
+      }
+
+      const headers = body.slice(headerStart, headerEnd).toString();
+      console.log('[LOGO] Headers do upload:', headers);
+
+      // Valida Content-Type do arquivo
+      const allowedMimes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+      const mimeMatch = headers.match(/Content-Type:\s*([^\r\n]+)/i);
+      const fileMime = mimeMatch ? mimeMatch[1].trim() : '';
+      if (!allowedMimes.includes(fileMime)) {
+        return res.status(400).json({ success: false, error: `Formato não permitido: "${fileMime}". Use PNG, JPG, WEBP ou SVG.` });
+      }
+
+      // Dados do arquivo começam logo após \r\n\r\n
+      const fileStart = headerEnd + 4;
+
+      // Fim dos dados: imediatamente antes do próximo \r\n--boundary
+      const endBoundary = Buffer.from('\r\n--' + boundary);
+      const fileEnd = body.indexOf(endBoundary, fileStart);
+      if (fileEnd === -1) {
+        console.error('[LOGO] Boundary final não encontrado. fileStart:', fileStart, 'body.length:', body.length);
+        return res.status(400).json({ success: false, error: 'Fim do arquivo não encontrado no corpo da requisição' });
+      }
+
+      const fileBuffer = body.slice(fileStart, fileEnd);
+      console.log(`[LOGO] Arquivo extraído: ${fileBuffer.length} bytes, mime: ${fileMime}`);
+
+      if (fileBuffer.length === 0) {
+        return res.status(400).json({ success: false, error: 'Arquivo vazio' });
+      }
+      if (fileBuffer.length > 5 * 1024 * 1024) {
+        return res.status(400).json({ success: false, error: 'Arquivo muito grande. Limite: 5 MB.' });
+      }
+
+      // Cria backup do logo padrão (apenas na primeira vez)
+      if (!fs.existsSync(LOGO_DEFAULT_PATH) && fs.existsSync(LOGO_PATH)) {
+        fs.copyFileSync(LOGO_PATH, LOGO_DEFAULT_PATH);
+        console.log('[LOGO] Backup do logo padrão criado: logo.default.png');
+      }
+
+      fs.writeFileSync(LOGO_PATH, fileBuffer);
+      console.log(`[LOGO] ✅ Logo salvo com sucesso (${fileBuffer.length} bytes)`);
+      res.json({ success: true, message: 'Logo atualizado com sucesso!' });
+    } catch (err) {
+      console.error('[LOGO] Erro no upload:', err.message);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+  req.on('error', err => res.status(500).json({ success: false, error: err.message }));
+});
+
+
+// Rota para restaurar o logo padrão
+app.post('/api/logo/reset', cookieAuth, (req, res) => {
+  try {
+    // Prioridade: logo.default.png (backup do 1º upload) → public/logo.png (padrão do sistema)
+    const fallbackLogo = path.join(PUBLIC_DIR, 'logo.png');
+    const source = fs.existsSync(LOGO_DEFAULT_PATH) ? LOGO_DEFAULT_PATH : fallbackLogo;
+
+    if (!fs.existsSync(source)) {
+      return res.status(404).json({ success: false, error: 'Nenhum logo padrão encontrado.' });
+    }
+
+    fs.copyFileSync(source, LOGO_PATH);
+    console.log(`[LOGO] Logo padrão restaurado de: ${path.basename(source)}`);
+    res.json({ success: true, message: 'Logo padrão restaurado.' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

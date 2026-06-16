@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selecionar Visualizacao</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="selector.css">
+</head>
+<body>
+    <main class="selector-shell">
+        <header class="selector-header">
+            <div class="header-brand-group">
+                <img src="/logo.png" alt="Logo" class="selector-logo">
+                <div class="header-text-group">
+                    <p class="eyebrow">Tela promocional</p>
+                    <h1>Escolha o visual desta tela</h1>
+                    <p>Selecione um modo para abrir as ofertas neste navegador. Use configuracoes para ajustar conexao, cores e intervalos.</p>
+                </div>
+            </div>
+            <a class="config-link" href="/config">Configuracoes</a>
+        </header>
+
+        <section class="layout-grid" aria-label="Modos de visualizacao">
+            <a class="layout-option featured" href="/display?layout=padrao">
+                <span class="layout-kicker">Recomendado</span>
+                <strong>Modo Padrao</strong>
+                <span>Grid equilibrado para exibicao geral de ofertas.</span>
+            </a>
+            <a class="layout-option" href="/display?layout=destaque">
+                <strong>Modo Destaque</strong>
+                <span>Uma oferta grande por vez para alto impacto.</span>
+            </a>
+            <a class="layout-option" href="/display?layout=compacto">
+                <strong>Modo Compacto</strong>
+                <span>Mais produtos na tela, ideal para listas maiores.</span>
+            </a>
+            <a class="layout-option" href="/display?layout=vitrine">
+                <strong>Modo Vitrine</strong>
+                <span>Lista lateral com uma oferta principal em rotacao.</span>
+            </a>
+            <a class="layout-option" href="/display?layout=sem-foto">
+                <strong>Sem Foto (Grade)</strong>
+                <span>Visual tipografico para bases sem imagens.</span>
+            </a>
+            <a class="layout-option" href="/display?layout=sem-foto-destaque">
+                <strong>Sem Foto (Destaque)</strong>
+                <span>Uma oferta gigante sem depender de foto.</span>
+            </a>
+        </section>
+    </main>
+
+    <script>
+        function setupTransitions() {
+            // Adiciona classe de fade-in
+            requestAnimationFrame(() => {
+                document.body.classList.add("page-loaded");
+            });
+
+            // Captura transição de saída para links
+            document.querySelectorAll("a").forEach(link => {
+                if (
+                    link.hostname === window.location.hostname &&
+                    !link.hash &&
+                    link.getAttribute("target") !== "_blank" &&
+                    !link.href.startsWith("javascript:")
+                ) {
+                    link.addEventListener("click", e => {
+                        e.preventDefault();
+                        const targetUrl = link.href;
+                        document.body.classList.add("page-exit");
+                        setTimeout(() => {
+                            window.location.href = targetUrl;
+                        }, 350);
+                    });
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupTransitions);
+        } else {
+            setupTransitions();
+        }
+    </script>
+</body>
+</html>

@@ -2,17 +2,23 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- PWA: esconde barra do navegador no mobile -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
     <title>Ofertas do Dia</title>
+    <link rel="manifest" href="/manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="main-container">
         <header class="header">
-            <a href="/" class="header-logo-left" title="Voltar à tela principal"><img src="/logo.png" alt="Logo"></a>
+            <a href="/" class="header-logo-left" title="Voltar à tela principal"><img src="/display-logo.png" alt="Logo"></a>
             <h1 class="blink-text">OFERTAS IMPERDIVEIS</h1>
-            <a href="/" class="header-logo-right" title="Voltar à tela principal"><img src="/logo.png" alt="Logo"></a>
+            <a href="/" class="header-logo-right" title="Voltar à tela principal"><img src="/display-logo.png" alt="Logo"></a>
         </header>
 
         <div id="carousel-container" class="carousel-container"></div>
@@ -39,5 +45,89 @@
     </template>
 
     <script src="script.js"></script>
+    <script>
+        // ── FULLSCREEN MANAGER ──────────────────────────────────────────
+        // Detecta mobile/tablet com tripla verificação:
+        // 1. User Agent  2. Touch points  3. Largura menor que 1280px
+        const hasMobileUA = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const hasTouchScreen = navigator.maxTouchPoints > 0 && window.innerWidth < 1280;
+        const isMobile = hasMobileUA && hasTouchScreen;
+
+
+        // Overlay de fullscreen
+        const overlay = document.createElement('div');
+        overlay.id = 'fs-overlay';
+        overlay.innerHTML = `
+            <div class="fs-box">
+                <div class="fs-icon">⛶</div>
+                <div class="fs-title">Toque para Tela Cheia</div>
+                <div class="fs-subtitle">Oculta a barra do navegador</div>
+            </div>`;
+        overlay.style.cssText = `
+            position:fixed;inset:0;z-index:99999;
+            background:rgba(0,0,0,0.88);
+            display:flex;align-items:center;justify-content:center;
+            cursor:pointer;touch-action:manipulation;
+            font-family:'Poppins',sans-serif;`;
+        overlay.querySelector('.fs-box').style.cssText = `
+            text-align:center;color:#fff;
+            background:linear-gradient(135deg,#d32f2f,#ff6f00);
+            padding:40px 60px;border-radius:24px;
+            box-shadow:0 20px 60px rgba(0,0,0,0.6);`;
+        overlay.querySelector('.fs-icon').style.cssText = `
+            font-size:72px;line-height:1;margin-bottom:12px;`;
+        overlay.querySelector('.fs-title').style.cssText = `
+            font-size:28px;font-weight:800;margin-bottom:8px;`;
+        overlay.querySelector('.fs-subtitle').style.cssText = `
+            font-size:16px;opacity:0.8;`;
+
+        function enterFullscreen() {
+            const el = document.documentElement;
+            const req = el.requestFullscreen
+                || el.webkitRequestFullscreen
+                || el.mozRequestFullScreen
+                || el.msRequestFullscreen;
+
+            if (req) {
+                req.call(el)
+                  .then(() => { overlay.remove(); })
+                  .catch(() => {
+                      // Fallback: scroll trick para esconder barra no Chrome
+                      document.body.style.overflow = 'auto';
+                      window.scrollTo({ top: 1, behavior: 'instant' });
+                      setTimeout(() => { document.body.style.overflow = 'hidden'; }, 300);
+                      overlay.remove();
+                  });
+            } else {
+                // Sem suporte à API: usa scroll trick
+                document.body.style.overflow = 'auto';
+                window.scrollTo({ top: 1, behavior: 'instant' });
+                setTimeout(() => { document.body.style.overflow = 'hidden'; }, 300);
+                overlay.remove();
+            }
+        }
+
+        // Reexibe overlay se sair do fullscreen (ex: apertar botão voltar)
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && isMobile) {
+                document.body.appendChild(overlay);
+            }
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            if (!document.webkitFullscreenElement && isMobile) {
+                document.body.appendChild(overlay);
+            }
+        });
+
+        overlay.addEventListener('click', enterFullscreen);
+        overlay.addEventListener('touchend', (e) => { e.preventDefault(); enterFullscreen(); });
+
+        // Só mostra o overlay em dispositivos mobile
+        if (isMobile) {
+            document.body.appendChild(overlay);
+        }
+        // ────────────────────────────────────────────────────────────────
+    </script>
 </body>
 </html>
+

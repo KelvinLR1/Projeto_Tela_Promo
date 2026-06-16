@@ -36,8 +36,11 @@ const fields = {
     displayCarouselInterval: document.getElementById('displayCarouselInterval'),
     displayVitrineInterval: document.getElementById('displayVitrineInterval'),
     displayPrimaryColor: document.getElementById('displayPrimaryColor'),
+    displayHeaderMidColor: document.getElementById('displayHeaderMidColor'),
     displayAccentColor: document.getElementById('displayAccentColor'),
     displayBackgroundColor: document.getElementById('displayBackgroundColor'),
+    displayBgCenterColor: document.getElementById('displayBgCenterColor'),
+    displayFooterBgColor: document.getElementById('displayFooterBgColor'),
     localImagesPath: document.getElementById('localImagesPath'),
     displayFilterActiveOnly: document.getElementById('displayFilterActiveOnly')
 };
@@ -124,8 +127,11 @@ function getDisplayFormData() {
         carouselInterval: secondsToMilliseconds(fields.displayCarouselInterval.value),
         vitrineItemInterval: secondsToMilliseconds(fields.displayVitrineInterval.value),
         primaryColor: fields.displayPrimaryColor.value,
+        headerMidColor: fields.displayHeaderMidColor.value,
         accentColor: fields.displayAccentColor.value,
         backgroundColor: fields.displayBackgroundColor.value,
+        bgCenterColor: fields.displayBgCenterColor.value,
+        footerBgColor: fields.displayFooterBgColor.value,
         filterActiveOnly: fields.displayFilterActiveOnly.value === 'true'
     };
 }
@@ -174,8 +180,11 @@ async function loadDisplayConfig() {
         fields.displayCarouselInterval.value = millisecondsToSeconds(data.carouselInterval, 10);
         fields.displayVitrineInterval.value = millisecondsToSeconds(data.vitrineItemInterval, 6);
         fields.displayPrimaryColor.value = data.primaryColor || '#d32f2f';
+        fields.displayHeaderMidColor.value = data.headerMidColor || '#f44336';
         fields.displayAccentColor.value = data.accentColor || '#fbc02d';
         fields.displayBackgroundColor.value = data.backgroundColor || '#111111';
+        fields.displayBgCenterColor.value = data.bgCenterColor || '#222222';
+        fields.displayFooterBgColor.value = data.footerBgColor || '#111111';
         fields.displayFilterActiveOnly.value = data.filterActiveOnly ? 'true' : 'false';
 
         updateSummary();
@@ -346,8 +355,11 @@ document.getElementById('btnRestoreDefaults').addEventListener('click', function
             field.dispatchEvent(new Event('change', { bubbles: true }));
         };
         setColor(fields.displayPrimaryColor, '#d32f2f');
+        setColor(fields.displayHeaderMidColor, '#f44336');
         setColor(fields.displayAccentColor, '#fbc02d');
         setColor(fields.displayBackgroundColor, '#111111');
+        setColor(fields.displayBgCenterColor, '#222222');
+        setColor(fields.displayFooterBgColor, '#111111');
 
         showToast('Padrões de fábrica aplicados temporariamente. Clique em Salvar para gravar.', 'info');
         updateSummary();
@@ -436,4 +448,94 @@ if (document.readyState === 'loading') {
     setupTransitions();
 }
 
+// ── LOGO UPLOAD ──────────────────────────────────────────────────────────────
+const logoFileInput  = document.getElementById('logoFileInput');
+const btnUploadLogo  = document.getElementById('btnUploadLogo');
+const btnResetLogo   = document.getElementById('btnResetLogo');
+const logoPreview    = document.getElementById('logoPreview');
+const logoFileName   = document.getElementById('logoFileName');
 
+let selectedLogoFile = null;
+
+logoFileInput.addEventListener('change', () => {
+    const file = logoFileInput.files[0];
+    if (!file) return;
+    selectedLogoFile = file;
+    logoFileName.textContent = `Selecionado: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    btnUploadLogo.disabled = false;
+    const reader = new FileReader();
+    reader.onload = (e) => { logoPreview.src = e.target.result; };
+    reader.readAsDataURL(file);
+});
+
+btnUploadLogo.addEventListener('click', async () => {
+    if (!selectedLogoFile) return;
+    const done = setButtonBusy(btnUploadLogo, 'Enviando...');
+    try {
+        const formData = new FormData();
+        formData.append('logo', selectedLogoFile);
+        const response = await fetch('/api/logo/upload', { method: 'POST', body: formData });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || result.success === false) throw new Error(result.error || 'Falha no upload');
+        const ts = Date.now();
+        document.querySelectorAll('img[src*="/logo.png"]').forEach(img => { img.src = `/logo.png?_t=${ts}`; });
+        logoPreview.src = `/display-logo.png?_t=${ts}`;
+        selectedLogoFile = null;
+        logoFileInput.value = '';
+        logoFileName.textContent = '✅ Logo atualizado com sucesso!';
+        btnUploadLogo.disabled = true;
+        showToast('Logo da empresa atualizado!', 'success');
+    } catch (err) {
+        showToast(`Erro ao enviar logo: ${err.message}`, 'error');
+    } finally {
+        done();
+    }
+});
+
+btnResetLogo.addEventListener('click', async function () {
+    if (this.dataset.confirming === 'true') {
+        this.dataset.confirming = 'false';
+        this.textContent = '↩ Restaurar Padrão';
+        this.style.background = '';
+        this.style.borderColor = '';
+        this.style.color = '';
+        window.clearTimeout(this.confirmTimeout);
+
+        const done = setButtonBusy(btnResetLogo, 'Restaurando...');
+        try {
+            const response = await fetch('/api/logo/reset', { method: 'POST' });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || result.success === false) throw new Error(result.error || 'Falha ao restaurar');
+            const ts = Date.now();
+            logoPreview.src = `/display-logo.png?_t=${ts}`;
+            logoFileName.textContent = '↩ Logo padrão restaurado.';
+            selectedLogoFile = null;
+            logoFileInput.value = '';
+            btnUploadLogo.disabled = true;
+            showToast('Logo padrão restaurado.', 'success');
+        } catch (err) {
+            showToast(`Erro ao restaurar logo: ${err.message}`, 'error');
+        } finally {
+            done();
+        }
+    } else {
+        this.dataset.confirming = 'true';
+        this.textContent = 'Confirmar Restauração?';
+        this.style.background = '#ff5252';
+        this.style.borderColor = '#ff5252';
+        this.style.color = '#ffffff';
+
+        const btn = this;
+        window.clearTimeout(btn.confirmTimeout);
+        btn.confirmTimeout = window.setTimeout(() => {
+            if (btn.dataset.confirming === 'true') {
+                btn.dataset.confirming = 'false';
+                btn.textContent = '↩ Restaurar Padrão';
+                btn.style.background = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }
+        }, 4000);
+    }
+});
+// ─────────────────────────────────────────────────────────────────────────────

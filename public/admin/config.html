@@ -243,6 +243,29 @@
                             </div>
 
                             <div class="form-stack">
+
+                                <!-- LOGO DA EMPRESA -->
+                                <div class="settings-group">
+                                    <h3>Logo da Empresa</h3>
+                                    <div class="logo-upload-area">
+                                        <div class="logo-preview-wrap">
+                                            <img id="logoPreview" src="/display-logo.png" alt="Logo atual" class="logo-preview-img">
+                                        </div>
+                                        <div class="logo-upload-controls">
+                                            <p class="hint" style="margin:0 0 12px;">Substitua o logo exibido nos cantos do cabeçalho da tela de promoções. Formatos aceitos: PNG, JPG, SVG, WEBP.</p>
+                                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                                <label class="secondary-button" for="logoFileInput" style="cursor:pointer; display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 16px;">
+                                                    📁 Escolher arquivo
+                                                </label>
+                                                <input type="file" id="logoFileInput" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="display:none;">
+                                                <button type="button" id="btnUploadLogo" class="primary-button" style="width:auto; padding:0 20px;" disabled>⬆ Enviar Logo</button>
+                                                <button type="button" id="btnResetLogo" class="danger-button" style="padding:0 16px;">↩ Restaurar Padrão</button>
+                                            </div>
+                                            <p class="hint" id="logoFileName" style="margin:10px 0 0; font-style:italic;"></p>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="split-fields split-fields-equal">
                                     <div class="field">
                                         <label for="displayTitle">Título principal da tela</label>
@@ -259,6 +282,10 @@
                                         <span>Cor Principal</span>
                                         <input type="color" id="displayPrimaryColor">
                                     </label>
+                                    <label class="color-field" for="displayHeaderMidColor">
+                                        <span>Meio do Cabeçalho</span>
+                                        <input type="color" id="displayHeaderMidColor">
+                                    </label>
                                     <label class="color-field" for="displayAccentColor">
                                         <span>Cor Destaque</span>
                                         <input type="color" id="displayAccentColor">
@@ -266,6 +293,14 @@
                                     <label class="color-field" for="displayBackgroundColor">
                                         <span>Cor Fundo</span>
                                         <input type="color" id="displayBackgroundColor">
+                                    </label>
+                                    <label class="color-field" for="displayBgCenterColor">
+                                        <span>Centro do Fundo</span>
+                                        <input type="color" id="displayBgCenterColor">
+                                    </label>
+                                    <label class="color-field" for="displayFooterBgColor">
+                                        <span>Fundo do Rodapé</span>
+                                        <input type="color" id="displayFooterBgColor">
                                     </label>
                                 </div>
 
