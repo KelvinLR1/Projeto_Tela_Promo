@@ -1032,8 +1032,22 @@ app.post('/api/logo/upload', cookieAuth, (req, res) => {
   const boundary = boundaryMatch[1].trim();
 
   const chunks = [];
-  req.on('data', chunk => chunks.push(chunk));
+  let receivedBytes = 0;
+  let exceeded = false;
+  req.on('data', chunk => {
+    receivedBytes += chunk.length;
+    if (receivedBytes > 6 * 1024 * 1024) { // Limite de 6 MB para o stream
+      exceeded = true;
+      if (!res.headersSent) {
+        res.status(413).json({ success: false, error: 'Arquivo muito grande. Limite: 5 MB.' });
+      }
+      req.destroy();
+    } else {
+      chunks.push(chunk);
+    }
+  });
   req.on('end', () => {
+    if (exceeded) return;
     try {
       const body = Buffer.concat(chunks);
 
@@ -1099,7 +1113,12 @@ app.post('/api/logo/upload', cookieAuth, (req, res) => {
       res.status(500).json({ success: false, error: err.message });
     }
   });
-  req.on('error', err => res.status(500).json({ success: false, error: err.message }));
+  req.on('error', err => {
+    console.error('[UPLOAD] Erro na stream de upload:', err.message);
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
 });
 
 

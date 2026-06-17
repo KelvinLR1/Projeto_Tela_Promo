@@ -158,13 +158,23 @@ async function init() {
 }
 
 function schedulePromotionFetch() {
-    if (fetchTimer) clearInterval(fetchTimer);
-    fetchTimer = setInterval(fetchPromotions, fetchInterval);
+    if (fetchTimer) clearTimeout(fetchTimer);
+    
+    const run = async () => {
+        await fetchPromotions();
+        fetchTimer = setTimeout(run, fetchInterval);
+    };
+    fetchTimer = setTimeout(run, fetchInterval);
 }
 
 function scheduleDisplayConfigFetch() {
-    if (configTimer) clearInterval(configTimer);
-    configTimer = setInterval(() => fetchDisplayConfig(false), DISPLAY_CONFIG_REFRESH_INTERVAL);
+    if (configTimer) clearTimeout(configTimer);
+    
+    const run = async () => {
+        await fetchDisplayConfig(false);
+        configTimer = setTimeout(run, DISPLAY_CONFIG_REFRESH_INTERVAL);
+    };
+    configTimer = setTimeout(run, DISPLAY_CONFIG_REFRESH_INTERVAL);
 }
 
 function applyLiveConfigChange(previousState) {
@@ -475,6 +485,9 @@ function isLastActiveDay(item) {
 
     const [endYear, endMonth, endDay] = endDateStr.split('-').map(Number);
     const endDate = new Date(endYear, endMonth - 1, endDay);
+    if (isNaN(endDate.getTime())) {
+        return false;
+    }
     endDate.setHours(0, 0, 0, 0);
 
     const checkDate = new Date(now);
