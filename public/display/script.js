@@ -39,6 +39,7 @@ let fetchTimer = null;
 let configTimer = null;
 let vitrineActiveIndex = 0; // Para o layout vitrine
 let lastFetchFailed = false;
+let carouselInitialized = false; // Garante que o 1o render sempre ocorra
 
 const carouselContainer = document.getElementById('carousel-container');
 const template = document.getElementById('product-template');
@@ -171,16 +172,11 @@ function getLocalDateString(date) {
 }
 
 function filterPromotionsIfNecessary(promotions) {
-    if (!displayConfig || displayConfig.filterActiveOnly !== true) {
-        return promotions;
-    }
-
     const now = new Date();
+    const todayStr = getLocalDateString(now);
 
     return promotions.filter(item => {
-        // 1. Validação de Intervalo de Datas (Vigência de data)
-        const todayStr = getLocalDateString(now);
-
+        // 1. Validação de Intervalo de Datas — SEMPRE aplicada
         if (item.data_inicio && item.data_inicio.trim() !== '') {
             if (todayStr < item.data_inicio.trim()) {
                 return false; // A oferta ainda não começou
@@ -195,6 +191,11 @@ function filterPromotionsIfNecessary(promotions) {
             if (todayStr > item.data_validade.trim()) {
                 return false; // A oferta já expirou
             }
+        }
+
+        // 2. Validação de Dias da Semana e Horário — somente quando filterActiveOnly está ativo
+        if (!displayConfig || displayConfig.filterActiveOnly !== true) {
+            return true;
         }
 
         // 2. Validação de Dias da Semana
@@ -263,10 +264,12 @@ async function fetchPromotions() {
         const filteredData = filterPromotionsIfNecessary(normalizedData);
         lastFetchFailed = false;
         
-        if (JSON.stringify(filteredData) !== JSON.stringify(allPromotions)) {
+        const dataChanged = !carouselInitialized || JSON.stringify(filteredData) !== JSON.stringify(allPromotions);
+        if (dataChanged) {
             allPromotions = filteredData;
             currentPage = 0;
             vitrineActiveIndex = 0;
+            carouselInitialized = true;
             updateCarousel();
         } else {
             // Dados iguais: re-renderiza o carrossel apenas se havia mensagem de erro,

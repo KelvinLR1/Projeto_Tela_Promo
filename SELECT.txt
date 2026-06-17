@@ -47,6 +47,8 @@ FROM
             ) AS rn
         FROM produto_imagem
     ) prodi ON prodi.id_produto = p.id_produto AND prodi.rn = 1
+WHERE
+	promo.ativo = 1
 
     /*
     0 = Domingo

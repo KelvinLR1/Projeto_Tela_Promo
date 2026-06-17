@@ -422,6 +422,7 @@ app.get('/api/promocoes', async (req, res) => {
     const conn = await getDbConnection();
     const customQuery = (process.env.DB_QUERY || '').trim();
 
+    // Banco configurado: executa a query real (nunca usa mock)
     if (conn) {
       console.log(`◇ [API] Buscando dados ativos do banco de dados: ${dbType.toUpperCase()}`);
       
@@ -457,11 +458,15 @@ app.get('/api/promocoes', async (req, res) => {
         }
       } catch (dbErr) {
         console.error('◇ [API] Falha ao consultar banco de dados:', dbErr.message);
-        console.log('◇ [API] Recorrendo aos dados MOCK para exibição na tela.');
         // Reseta o pool para forçar uma nova tentativa de conexão no futuro
         dbPool = null;
+        // Com banco configurado, retorna erro — nunca dados mock
+        return res.status(503).json({ error: 'Falha temporária ao consultar o banco de dados. Tente novamente em instantes.' });
       }
     }
+
+    // Banco NÃO configurado (senha padrão, tipo desconhecido, etc.): usa dados MOCK de demonstração
+    console.log('◇ [API] Banco não configurado. Exibindo dados de demonstração (MOCK).');
 
     const todayStr = new Date().toISOString().split('T')[0];
     const tomorrow = new Date();
@@ -471,7 +476,7 @@ app.get('/api/promocoes', async (req, res) => {
     nextWeek.setDate(nextWeek.getDate() + 7);
     const nextWeekStr = nextWeek.toISOString().split('T')[0];
 
-    // Retorna 16 produtos falsos (MOCK) se o banco não estiver configurado ou falhar
+    // Retorna 16 produtos falsos (MOCK) se o banco não estiver configurado
     const mockProdutos = [
       { id: 1, nome_produto: "Arroz Branco Tipo 1 5kg Premium", preco_anterior: 25.90, preco_atual: 19.99, link_imagem: "https://loremflickr.com/400/400/rice,package/all", data_validade: "2026-12-31", texto_validade: "OFERTA DA SEMANA" },
       { id: 2, nome_produto: "Feijão Carioca 1kg", preco_anterior: 8.50, preco_atual: 5.99, link_imagem: "", data_validade: "2026-12-31", texto_validade: "SÓ NESTA QUARTA" },

@@ -493,49 +493,24 @@ btnUploadLogo.addEventListener('click', async () => {
 });
 
 btnResetLogo.addEventListener('click', async function () {
-    if (this.dataset.confirming === 'true') {
-        this.dataset.confirming = 'false';
-        this.textContent = '↩ Restaurar Padrão';
-        this.style.background = '';
-        this.style.borderColor = '';
-        this.style.color = '';
-        window.clearTimeout(this.confirmTimeout);
+    if (!window.confirm('Restaurar o logo padrão? A imagem enviada será substituída pelo logo original.')) return;
 
-        const done = setButtonBusy(btnResetLogo, 'Restaurando...');
-        try {
-            const response = await fetch('/api/logo/reset', { method: 'POST' });
-            const result = await response.json().catch(() => ({}));
-            if (!response.ok || result.success === false) throw new Error(result.error || 'Falha ao restaurar');
-            const ts = Date.now();
-            logoPreview.src = `/display-logo.png?_t=${ts}`;
-            logoFileName.textContent = '↩ Logo padrão restaurado.';
-            selectedLogoFile = null;
-            logoFileInput.value = '';
-            btnUploadLogo.disabled = true;
-            showToast('Logo padrão restaurado.', 'success');
-        } catch (err) {
-            showToast(`Erro ao restaurar logo: ${err.message}`, 'error');
-        } finally {
-            done();
-        }
-    } else {
-        this.dataset.confirming = 'true';
-        this.textContent = 'Confirmar Restauração?';
-        this.style.background = '#ff5252';
-        this.style.borderColor = '#ff5252';
-        this.style.color = '#ffffff';
-
-        const btn = this;
-        window.clearTimeout(btn.confirmTimeout);
-        btn.confirmTimeout = window.setTimeout(() => {
-            if (btn.dataset.confirming === 'true') {
-                btn.dataset.confirming = 'false';
-                btn.textContent = '↩ Restaurar Padrão';
-                btn.style.background = '';
-                btn.style.borderColor = '';
-                btn.style.color = '';
-            }
-        }, 4000);
+    const done = setButtonBusy(btnResetLogo, 'Restaurando...');
+    try {
+        const response = await fetch('/api/logo/reset', { method: 'POST' });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || result.success === false) throw new Error(result.error || 'Falha ao restaurar');
+        const ts = Date.now();
+        logoPreview.src = `/display-logo.png?_t=${ts}`;
+        logoFileName.textContent = '↩ Logo padrão restaurado.';
+        selectedLogoFile = null;
+        logoFileInput.value = '';
+        btnUploadLogo.disabled = true;
+        showToast('Logo padrão restaurado!', 'success');
+    } catch (err) {
+        showToast(`Erro ao restaurar logo: ${err.message}`, 'error');
+    } finally {
+        done();
     }
 });
 // ─────────────────────────────────────────────────────────────────────────────
