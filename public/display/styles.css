@@ -147,7 +147,7 @@ body {
 
 /* CARDS DE PRODUTOS */
 .product-card {
-    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+    background: linear-gradient(145deg, var(--card-padrao-bg-start, #ffffff), var(--card-padrao-bg-end, #f0f0f0));
     border-radius: 20px;
     width: calc(45vw - 1.5vw); /* Calcula pra caber 2 por linha com gap */
     height: 34vh;
@@ -171,7 +171,7 @@ body {
 
 /* Destaque visual: Borda amarela */
 .product-card {
-    border-color: var(--promo-accent, #fbc02d);
+    border-color: var(--card-padrao-border, var(--promo-accent, #fbc02d));
 }
 
 @keyframes scaleIn {
@@ -186,7 +186,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #fff;
+    background-color: transparent;
     border-radius: 15px;
     padding: 1vw;
     box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
@@ -250,7 +250,7 @@ body {
 }
 
 .product-name {
-    color: #333;
+    color: var(--card-padrao-text-name, #333);
     font-size: 4vh;
     font-weight: 800;
     line-height: 1.2;
@@ -282,7 +282,7 @@ body {
 }
 
 .new-price {
-    color: var(--promo-primary, #d32f2f);
+    color: var(--card-padrao-text-price, var(--promo-primary, #d32f2f));
     font-size: 7.5vh;
     font-weight: 900;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
@@ -453,6 +453,48 @@ body {
     border-color: #fbc02d;
     transform: scale(1.05) translateX(1vw);
     box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+.vitrine-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3vh 0.6vw;
+    font-size: 1.35vh;
+    font-weight: 800;
+    border-radius: 4px;
+    text-transform: uppercase;
+    line-height: 1;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.vitrine-badge-lp {
+    background-color: var(--card-leve-bg, #7a5c00);
+    border-color: rgba(251, 192, 45, 0.4);
+}
+
+.vitrine-badge-desc {
+    background-color: var(--card-desc-badge-bg, #d32f2f);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.vitrine-badge-pack {
+    background-color: var(--card-pack-bg-start, #0d1b2a);
+    border-color: var(--card-pack-border, #fbc02d);
+}
+
+.vitrine-badge-qty {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.vitrine-list-item.active .vitrine-badge-lp,
+.vitrine-list-item.active .vitrine-badge-desc,
+.vitrine-list-item.active .vitrine-badge-pack,
+.vitrine-list-item.active .vitrine-badge-qty {
+    border-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(0, 0, 0, 0.35);
+    color: #fff;
 }
 
 .list-info {
@@ -833,3 +875,315 @@ body.page-exit {
     opacity: 0;
 }
 
+
+/* =========================================================== */
+/* NOVOS TIPOS DE PROMOÇÃO: LEVA_PAGA / DESCONTO / PACK        */
+/* =========================================================== */
+
+/* ── LEVA E PAGA ─────────────────────────────────────────── */
+.card-leva-paga {
+    background: linear-gradient(135deg, var(--card-leva-bg-start, #0f2027), var(--card-leva-bg-end, #2c5364));
+    border-color: var(--card-leva-border, var(--promo-accent, #fbc02d));
+    border-width: 4px;
+}
+.lp-badge-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8vw;
+    margin-bottom: 1.2vh;
+}
+.lp-block {
+    display: flex;
+    align-items: center;
+    gap: 0.3vw;
+    background: rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 0.5vh 0.9vw;
+}
+.lp-leve  { background: var(--card-leve-bg, #7a5c00); border: 1px solid rgba(251,192,45,0.5); }
+.lp-pague { background: var(--card-pague-bg, #7a1020); border: 1px solid rgba(220,53,69,0.5); }
+.lp-num {
+    font-size: 5.5vh;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+}
+.lp-label {
+    font-size: 1.4vh;
+    font-weight: 800;
+    color: rgba(255,255,255,0.85);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.lp-sep {
+    font-size: 3vh;
+    font-weight: 900;
+    color: rgba(255,255,255,0.65);
+    padding: 0 0.2vw;
+}
+.lp-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6vw;
+    padding-top: 0.6vh;
+}
+.lp-unit-label {
+    font-size: 1.6vh;
+    color: rgba(255,255,255,0.75);
+    font-weight: 600;
+}
+.lp-unit-price {
+    font-size: 4.5vh;
+    font-weight: 900;
+    color: var(--card-leva-unit-price, var(--promo-accent, #fbc02d));
+}
+.card-leva-paga .product-name { color: var(--card-leva-text-name, #ffffff); }
+
+/* ── DESCONTO PERCENTUAL ──────────────────────────────────── */
+.card-desconto {
+    background: linear-gradient(135deg, var(--card-desc-bg-start, #ffffff), var(--card-desc-bg-end, #ffffff));
+    border-color: var(--card-desc-border, #d32f2f);
+}
+.card-desconto .product-name { color: var(--card-desc-text-name, #1a1a1a); }
+.desc-row { display: flex; align-items: center; gap: 1.2vw; margin-top: 0.5vh; }
+.desc-pct-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-desc-badge-bg, #d32f2f);
+    border-radius: 14px;
+    padding: 0.8vh 1.1vw;
+    min-width: 4.5vw;
+    animation: pulseBadge 2.5s ease-in-out infinite;
+    flex-shrink: 0;
+}
+.desc-pct-num  { font-size: 5vh; font-weight: 900; color: var(--card-desc-badge-text, #fff); line-height: 1; }
+.desc-pct-label{ font-size: 1.3vh; font-weight: 800; color: var(--card-desc-badge-text, rgba(255,255,255,0.9)); text-transform: uppercase; }
+.desc-prices { display: flex; flex-direction: column; }
+.desc-prices .old-price { font-size: 2.6vh; color: #999; }
+.desc-prices .new-price { font-size: 6.5vh; color: var(--card-desc-new-price, var(--promo-primary, #d32f2f)); }
+.desc-qty-cond {
+    font-size: 1.7vh;
+    font-weight: 700;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5vh;
+    padding: 0.3vh 0.6vw;
+    background: rgba(211,47,47,0.1);
+    border-left: 3px solid var(--card-desc-border, var(--promo-primary, #d32f2f));
+    border-radius: 0 4px 4px 0;
+}
+
+/* ── PACK (QUANTIDADE POR PREÇO) ──────────────────────────── */
+.card-pack {
+    background: linear-gradient(135deg, var(--card-pack-bg-start, #0d1b2a), var(--card-pack-bg-end, #1b263b));
+    border-color: var(--card-pack-border, var(--promo-accent, #fbc02d));
+    border-width: 4px;
+}
+.card-pack .product-name { color: var(--card-pack-text-name, #fff); }
+.pack-qty-label {
+    font-size: 1.8vh;
+    color: rgba(255,255,255,0.8);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.3vh;
+}
+.pack-price-badge {
+    font-size: 7.5vh;
+    font-weight: 900;
+    color: var(--card-pack-price, var(--promo-accent, #fbc02d));
+    line-height: 1;
+    text-shadow: 0 3px 10px rgba(251,192,45,0.3);
+}
+.pack-old-price {
+    font-size: 1.8vh;
+    color: rgba(255,255,255,0.55);
+    text-decoration: line-through;
+    margin-top: 0.4vh;
+}
+
+/* ── SCHEDULE BADGES: ALINHAMENTO NOS MODOS SEM FOTO ──────── */
+.layout-sem-foto .schedule-badges,
+.layout-sem-foto-destaque .schedule-badges {
+    align-self: center;
+    justify-content: center;
+    margin-bottom: 1vh;
+}
+.layout-sem-foto .validity-badge { min-height: 2.8vh; font-size: 1.3vh; }
+.layout-sem-foto-destaque .schedule-badges { margin-bottom: 2vh; }
+.layout-sem-foto-destaque .validity-badge { min-height: 4vh; font-size: 2vh; border-radius: 8px; }
+.layout-sem-foto-destaque .badge-label { font-size: 1.3vh; padding: 0.5vh 0.7vw; }
+.layout-sem-foto-destaque .badge-value { padding: 0.5vh 0.9vw; }
+
+/* ── VITRINE: texto branco nos cards escuros ───────────────── */
+.large-vitrine-card .product-name { color: #1a1a1a; }
+.large-vitrine-card.card-leva-paga .product-name,
+.large-vitrine-card.card-pack .product-name { color: var(--card-leva-text-name, #fff); }
+.large-vitrine-card.card-desconto .product-name { color: var(--card-desc-text-name, #1a1a1a); }
+.large-vitrine-card.card-leva-paga .product-info,
+.large-vitrine-card.card-pack .product-info { align-items: center; text-align: center; }
+
+/* ── ESCALONAMENTO POR LAYOUT ─────────────────────────────── */
+
+/* DESTAQUE */
+.layout-destaque .card-leva-paga .product-name,
+.layout-destaque .card-desconto .product-name,
+.layout-destaque .card-pack .product-name { font-size: 6vh; margin-bottom: 3vh; }
+.layout-destaque .lp-num           { font-size: 10vh; }
+.layout-destaque .lp-label         { font-size: 2.5vh; }
+.layout-destaque .lp-sep           { font-size: 6vh; }
+.layout-destaque .lp-unit-label    { font-size: 2.5vh; }
+.layout-destaque .lp-unit-price    { font-size: 6vh; }
+.layout-destaque .lp-badge-wrap    { margin-bottom: 3vh; }
+.layout-destaque .desc-pct-num     { font-size: 9vh; }
+.layout-destaque .desc-pct-label   { font-size: 3vh; }
+.layout-destaque .desc-pct-badge   { padding: 1.5vh 2vw; border-radius: 20px; }
+.layout-destaque .desc-qty-cond    { font-size: 2.5vh; margin-bottom: 1.5vh; }
+.layout-destaque .desc-prices .old-price { font-size: 4vh; }
+.layout-destaque .desc-prices .new-price { font-size: 12vh; }
+.layout-destaque .pack-qty-label   { font-size: 3vh; }
+.layout-destaque .pack-price-badge { font-size: 13vh; }
+.layout-destaque .pack-old-price   { font-size: 2.5vh; }
+
+/* COMPACTO */
+.layout-compacto .card-leva-paga,
+.layout-compacto .card-desconto,
+.layout-compacto .card-pack { flex-direction: column; }
+.layout-compacto .card-leva-paga .product-info,
+.layout-compacto .card-desconto .product-info,
+.layout-compacto .card-pack .product-info { padding-left: 0; align-items: center; text-align: center; }
+.layout-compacto .lp-num           { font-size: 3.5vh; }
+.layout-compacto .lp-label         { font-size: 1.1vh; }
+.layout-compacto .lp-sep           { font-size: 2vh; }
+.layout-compacto .lp-badge-wrap    { margin-bottom: 0.5vh; gap: 0.4vw; }
+.layout-compacto .lp-block         { padding: 0.3vh 0.6vw; }
+.layout-compacto .lp-unit-label    { font-size: 1.2vh; }
+.layout-compacto .lp-unit-price    { font-size: 3.2vh; }
+.layout-compacto .lp-price-row     { padding-top: 0.4vh; gap: 0.4vw; }
+.layout-compacto .desc-pct-num     { font-size: 3vh; }
+.layout-compacto .desc-pct-label   { font-size: 1.1vh; }
+.layout-compacto .desc-pct-badge   { padding: 0.5vh 0.7vw; border-radius: 8px; min-width: 3vw; }
+.layout-compacto .desc-qty-cond    { font-size: 1.1vh; margin-bottom: 0.3vh; padding: 0.2vh 0.4vw; }
+.layout-compacto .desc-row         { gap: 0.8vw; }
+.layout-compacto .desc-prices .old-price { font-size: 1.6vh; }
+.layout-compacto .desc-prices .new-price { font-size: 3.5vh; }
+.layout-compacto .pack-qty-label   { font-size: 1.2vh; margin-bottom: 0.2vh; }
+.layout-compacto .pack-price-badge { font-size: 4.5vh; }
+.layout-compacto .pack-old-price   { font-size: 1.2vh; }
+
+/* VITRINE */
+.large-vitrine-card .lp-num        { font-size: 9vh; }
+.large-vitrine-card .lp-label      { font-size: 2.2vh; }
+.large-vitrine-card .lp-sep        { font-size: 5vh; }
+.large-vitrine-card .lp-badge-wrap { margin-bottom: 2.5vh; }
+.large-vitrine-card .lp-unit-label { font-size: 2.2vh; }
+.large-vitrine-card .lp-unit-price { font-size: 6.5vh; }
+.large-vitrine-card .desc-pct-num  { font-size: 8vh; }
+.large-vitrine-card .desc-pct-label{ font-size: 2.5vh; }
+.large-vitrine-card .desc-pct-badge{ padding: 1.2vh 1.5vw; border-radius: 18px; }
+.large-vitrine-card .desc-qty-cond { font-size: 2.2vh; margin-bottom: 1.2vh; }
+.large-vitrine-card .desc-prices .old-price { font-size: 3.5vh; }
+.large-vitrine-card .desc-prices .new-price { font-size: 11vh; }
+.large-vitrine-card .pack-qty-label { font-size: 2.5vh; }
+.large-vitrine-card .pack-price-badge { font-size: 12vh; }
+.large-vitrine-card .pack-old-price { font-size: 2vh; }
+
+/* SEM FOTO */
+.layout-sem-foto .card-leva-paga,
+.layout-sem-foto .card-desconto,
+.layout-sem-foto .card-pack {
+    flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; position: relative;
+    background: linear-gradient(145deg, var(--card-padrao-bg-start, #ffffff), var(--card-padrao-bg-end, #fffdf0));
+    border: 5px solid var(--card-padrao-border, #d32f2f);
+}
+.layout-sem-foto .card-leva-paga {
+    border-color: var(--card-leva-border, var(--promo-accent, #fbc02d));
+    background: linear-gradient(145deg, var(--card-leva-bg-start, #1a1a2e), var(--card-leva-bg-end, #16213e));
+}
+.layout-sem-foto .card-desconto {
+    background: linear-gradient(145deg, var(--card-desc-bg-start, #ffffff), var(--card-desc-bg-end, #ffffff));
+    border-color: var(--card-desc-border, #d32f2f);
+}
+.layout-sem-foto .card-pack {
+    border-color: var(--card-pack-border, var(--promo-accent, #fbc02d));
+    background: linear-gradient(145deg, var(--card-pack-bg-start, #0d1b2a), var(--card-pack-bg-end, #1b263b));
+}
+.layout-sem-foto .card-leva-paga .product-info,
+.layout-sem-foto .card-desconto .product-info,
+.layout-sem-foto .card-pack .product-info { padding-left: 0; align-items: center; }
+.layout-sem-foto .card-leva-paga .product-name,
+.layout-sem-foto .card-pack .product-name     { color: var(--card-leva-text-name, #fff); }
+.layout-sem-foto .card-desconto .product-name { color: var(--card-desc-text-name, #111); }
+.layout-sem-foto .card-desconto .desc-qty-cond{ color: var(--card-desc-text-name, #222); background: rgba(211,47,47,0.12); }
+.layout-sem-foto .lp-num               { font-size: 5vh; }
+.layout-sem-foto .lp-label             { font-size: 1.3vh; }
+.layout-sem-foto .lp-sep               { font-size: 3vh; }
+.layout-sem-foto .lp-badge-wrap        { margin-bottom: 0.8vh; }
+.layout-sem-foto .lp-unit-price        { font-size: 3.8vh; }
+.layout-sem-foto .desc-pct-num         { font-size: 4.5vh; }
+.layout-sem-foto .desc-pct-badge       { padding: 0.6vh 0.8vw; }
+.layout-sem-foto .desc-qty-cond        { font-size: 1.4vh; }
+.layout-sem-foto .desc-prices .new-price { font-size: 6vh; }
+.layout-sem-foto .pack-qty-label       { font-size: 1.6vh; color: rgba(255,255,255,0.8); }
+.layout-sem-foto .pack-price-badge     { font-size: 7vh; }
+
+/* SEM FOTO DESTAQUE */
+.layout-sem-foto-destaque .carousel-container {
+    padding: 4vh 4vw;
+}
+.layout-sem-foto-destaque .product-card {
+    width: 80vw;
+    height: 72vh;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 8vh 6vw;
+    position: relative;
+    border: 10px solid var(--card-padrao-border, #d32f2f);
+    border-radius: 40px;
+    background: linear-gradient(145deg, var(--card-padrao-bg-start, #ffffff), var(--card-padrao-bg-end, #fffbe0));
+    box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+}
+.layout-sem-foto-destaque .card-desconto {
+    background: linear-gradient(145deg, var(--card-desc-bg-start, #ffffff), var(--card-desc-bg-end, #fffbe0));
+    border-color: var(--card-desc-border, #d32f2f);
+}
+.layout-sem-foto-destaque .card-leva-paga,
+.layout-sem-foto-destaque .card-desconto,
+.layout-sem-foto-destaque .card-pack {
+    flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; position: relative;
+}
+.layout-sem-foto-destaque .card-leva-paga { background: linear-gradient(145deg, var(--card-leva-bg-start, #1a1a2e), var(--card-leva-bg-end, #16213e)); border-color: var(--card-leva-border, var(--promo-accent, #fbc02d)); }
+.layout-sem-foto-destaque .card-pack      { background: linear-gradient(145deg, var(--card-pack-bg-start, #0d1b2a), var(--card-pack-bg-end, #1b263b)); border-color: var(--card-pack-border, var(--promo-accent, #fbc02d)); }
+.layout-sem-foto-destaque .card-leva-paga .product-info,
+.layout-sem-foto-destaque .card-desconto .product-info,
+.layout-sem-foto-destaque .card-pack .product-info { padding-left: 0; align-items: center; }
+.layout-sem-foto-destaque .card-leva-paga .product-name,
+.layout-sem-foto-destaque .card-pack .product-name     { color: var(--card-leva-text-name, #fff); }
+.layout-sem-foto-destaque .card-desconto .product-name { color: var(--card-desc-text-name, #111); }
+.layout-sem-foto-destaque .card-desconto .desc-qty-cond{ color: var(--card-desc-text-name, #222); }
+.layout-sem-foto-destaque .lp-num         { font-size: 12vh; }
+.layout-sem-foto-destaque .lp-label       { font-size: 3vh; }
+.layout-sem-foto-destaque .lp-sep         { font-size: 7vh; }
+.layout-sem-foto-destaque .lp-badge-wrap  { margin-bottom: 4vh; gap: 1.5vw; }
+.layout-sem-foto-destaque .lp-block       { padding: 1.2vh 2.5vw; }
+.layout-sem-foto-destaque .lp-unit-label  { font-size: 3vh; }
+.layout-sem-foto-destaque .lp-unit-price  { font-size: 8.5vh; }
+.layout-sem-foto-destaque .lp-price-row   { padding-top: 2vh; gap: 1.5vw; }
+.layout-sem-foto-destaque .desc-pct-num   { font-size: 11vh; }
+.layout-sem-foto-destaque .desc-pct-label { font-size: 4vh; }
+.layout-sem-foto-destaque .desc-pct-badge { padding: 2vh 3vw; border-radius: 24px; }
+.layout-sem-foto-destaque .desc-qty-cond  { font-size: 3vh; margin-bottom: 2.5vh; padding: 0.6vh 1.5vw; }
+.layout-sem-foto-destaque .desc-row       { gap: 3vw; }
+.layout-sem-foto-destaque .desc-prices .old-price  { font-size: 5vh; }
+.layout-sem-foto-destaque .desc-prices .new-price  { font-size: 14vh; }
+.layout-sem-foto-destaque .pack-qty-label  { font-size: 3.5vh; color: rgba(255,255,255,0.8); }
+.layout-sem-foto-destaque .pack-price-badge{ font-size: 16vh; }
+.layout-sem-foto-destaque .pack-old-price  { font-size: 3vh; }

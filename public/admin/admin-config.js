@@ -29,6 +29,7 @@ const fields = {
     database: document.getElementById('database'),
     user: document.getElementById('user'),
     password: document.getElementById('password'),
+    dbMockFallback: document.getElementById('dbMockFallback'),
     dbQuery: document.getElementById('dbQuery'),
     displayTitle: document.getElementById('displayTitle'),
     displayFooter: document.getElementById('displayFooter'),
@@ -42,8 +43,119 @@ const fields = {
     displayBgCenterColor: document.getElementById('displayBgCenterColor'),
     displayFooterBgColor: document.getElementById('displayFooterBgColor'),
     localImagesPath: document.getElementById('localImagesPath'),
-    displayFilterActiveOnly: document.getElementById('displayFilterActiveOnly')
+    displayFilterActiveOnly: document.getElementById('displayFilterActiveOnly'),
+
+    cardPadraoBgStart: document.getElementById('cardPadraoBgStart'),
+    cardPadraoBgEnd: document.getElementById('cardPadraoBgEnd'),
+    cardPadraoBorder: document.getElementById('cardPadraoBorder'),
+    cardPadraoTextName: document.getElementById('cardPadraoTextName'),
+    cardPadraoTextPrice: document.getElementById('cardPadraoTextPrice'),
+
+    cardLevaBgStart: document.getElementById('cardLevaBgStart'),
+    cardLevaBgEnd: document.getElementById('cardLevaBgEnd'),
+    cardLevaBorder: document.getElementById('cardLevaBorder'),
+    cardLevaTextName: document.getElementById('cardLevaTextName'),
+    cardLeveBg: document.getElementById('cardLeveBg'),
+    cardPagueBg: document.getElementById('cardPagueBg'),
+    cardLevaUnitPrice: document.getElementById('cardLevaUnitPrice'),
+
+    cardDescBgStart: document.getElementById('cardDescBgStart'),
+    cardDescBgEnd: document.getElementById('cardDescBgEnd'),
+    cardDescBorder: document.getElementById('cardDescBorder'),
+    cardDescTextName: document.getElementById('cardDescTextName'),
+    cardDescBadgeBg: document.getElementById('cardDescBadgeBg'),
+    cardDescBadgeText: document.getElementById('cardDescBadgeText'),
+    cardDescNewPrice: document.getElementById('cardDescNewPrice'),
+
+    cardPackBgStart: document.getElementById('cardPackBgStart'),
+    cardPackBgEnd: document.getElementById('cardPackBgEnd'),
+    cardPackBorder: document.getElementById('cardPackBorder'),
+    cardPackTextName: document.getElementById('cardPackTextName'),
+    cardPackPrice: document.getElementById('cardPackPrice')
 };
+
+const colorPropertyMap = {
+    displayPrimaryColor: '--promo-primary',
+    displayHeaderMidColor: '--promo-header-mid',
+    displayAccentColor: '--promo-accent',
+    displayBackgroundColor: '--promo-background',
+    displayBgCenterColor: '--promo-bg-center',
+    displayFooterBgColor: '--promo-footer-bg',
+
+    cardPadraoBgStart: '--card-padrao-bg-start',
+    cardPadraoBgEnd: '--card-padrao-bg-end',
+    cardPadraoBorder: '--card-padrao-border',
+    cardPadraoTextName: '--card-padrao-text-name',
+    cardPadraoTextPrice: '--card-padrao-text-price',
+
+    cardLevaBgStart: '--card-leva-bg-start',
+    cardLevaBgEnd: '--card-leva-bg-end',
+    cardLevaBorder: '--card-leva-border',
+    cardLevaTextName: '--card-leva-text-name',
+    cardLeveBg: '--card-leve-bg',
+    cardPagueBg: '--card-pague-bg',
+    cardLevaUnitPrice: '--card-leva-unit-price',
+
+    cardDescBgStart: '--card-desc-bg-start',
+    cardDescBgEnd: '--card-desc-bg-end',
+    cardDescBorder: '--card-desc-border',
+    cardDescTextName: '--card-desc-text-name',
+    cardDescBadgeBg: '--card-desc-badge-bg',
+    cardDescBadgeText: '--card-desc-badge-text',
+    cardDescNewPrice: '--card-desc-new-price',
+
+    cardPackBgStart: '--card-pack-bg-start',
+    cardPackBgEnd: '--card-pack-bg-end',
+    cardPackBorder: '--card-pack-border',
+    cardPackTextName: '--card-pack-text-name',
+    cardPackPrice: '--card-pack-price'
+};
+
+function syncAllPreviews() {
+    for (const [fieldId, cssVarName] of Object.entries(colorPropertyMap)) {
+        const input = fields[fieldId];
+        if (input) {
+            document.documentElement.style.setProperty(cssVarName, input.value);
+        }
+    }
+    // Sincroniza o texto do título e rodapé na miniatura da tela
+    const screenTitle = document.getElementById('previewScreenTitle');
+    const screenFooter = document.getElementById('previewScreenFooter');
+    if (screenTitle && fields.displayTitle) {
+        screenTitle.textContent = fields.displayTitle.value || 'OFERTAS IMPERDIVEIS';
+    }
+    if (screenFooter && fields.displayFooter) {
+        screenFooter.textContent = fields.displayFooter.value || '';
+    }
+}
+
+function initLivePreviews() {
+    for (const [fieldId, cssVarName] of Object.entries(colorPropertyMap)) {
+        const input = fields[fieldId];
+        if (input) {
+            input.addEventListener('input', () => {
+                document.documentElement.style.setProperty(cssVarName, input.value);
+            });
+        }
+    }
+    // Sincronização em tempo real de textos
+    if (fields.displayTitle) {
+        fields.displayTitle.addEventListener('input', () => {
+            const screenTitle = document.getElementById('previewScreenTitle');
+            if (screenTitle) {
+                screenTitle.textContent = fields.displayTitle.value || 'OFERTAS IMPERDIVEIS';
+            }
+        });
+    }
+    if (fields.displayFooter) {
+        fields.displayFooter.addEventListener('input', () => {
+            const screenFooter = document.getElementById('previewScreenFooter');
+            if (screenFooter) {
+                screenFooter.textContent = fields.displayFooter.value || '';
+            }
+        });
+    }
+}
 
 function initLayoutOptions() {
     const linksContainer = document.getElementById('layoutLinks');
@@ -114,6 +226,7 @@ function getFormData() {
         database: fields.database.value,
         user: fields.user.value,
         password: fields.password.value,
+        dbMockFallback: fields.dbMockFallback.value === 'true',
         dbQuery: fields.dbQuery.value
     };
 }
@@ -132,7 +245,35 @@ function getDisplayFormData() {
         backgroundColor: fields.displayBackgroundColor.value,
         bgCenterColor: fields.displayBgCenterColor.value,
         footerBgColor: fields.displayFooterBgColor.value,
-        filterActiveOnly: fields.displayFilterActiveOnly.value === 'true'
+        filterActiveOnly: fields.displayFilterActiveOnly.value === 'true',
+
+        cardPadraoBgStart: fields.cardPadraoBgStart.value,
+        cardPadraoBgEnd: fields.cardPadraoBgEnd.value,
+        cardPadraoBorder: fields.cardPadraoBorder.value,
+        cardPadraoTextName: fields.cardPadraoTextName.value,
+        cardPadraoTextPrice: fields.cardPadraoTextPrice.value,
+
+        cardLevaBgStart: fields.cardLevaBgStart.value,
+        cardLevaBgEnd: fields.cardLevaBgEnd.value,
+        cardLevaBorder: fields.cardLevaBorder.value,
+        cardLevaTextName: fields.cardLevaTextName.value,
+        cardLeveBg: fields.cardLeveBg.value,
+        cardPagueBg: fields.cardPagueBg.value,
+        cardLevaUnitPrice: fields.cardLevaUnitPrice.value,
+
+        cardDescBgStart: fields.cardDescBgStart.value,
+        cardDescBgEnd: fields.cardDescBgEnd.value,
+        cardDescBorder: fields.cardDescBorder.value,
+        cardDescTextName: fields.cardDescTextName.value,
+        cardDescBadgeBg: fields.cardDescBadgeBg.value,
+        cardDescBadgeText: fields.cardDescBadgeText.value,
+        cardDescNewPrice: fields.cardDescNewPrice.value,
+
+        cardPackBgStart: fields.cardPackBgStart.value,
+        cardPackBgEnd: fields.cardPackBgEnd.value,
+        cardPackBorder: fields.cardPackBorder.value,
+        cardPackTextName: fields.cardPackTextName.value,
+        cardPackPrice: fields.cardPackPrice.value
     };
 }
 
@@ -157,6 +298,7 @@ async function loadCurrentConfig() {
         fields.database.value = data.database || '';
         fields.user.value = data.user || '';
         fields.password.value = data.password || '';
+        fields.dbMockFallback.value = data.dbMockFallback !== false ? 'true' : 'false';
         fields.dbQuery.value = data.dbQuery || '';
         // Mostra/oculta campo de instância conforme o tipo de banco carregado
         const isSqlServer = (data.dbType || 'mysql') === 'sqlserver';
@@ -187,7 +329,36 @@ async function loadDisplayConfig() {
         fields.displayFooterBgColor.value = data.footerBgColor || '#111111';
         fields.displayFilterActiveOnly.value = data.filterActiveOnly ? 'true' : 'false';
 
+        fields.cardPadraoBgStart.value = data.cardPadraoBgStart || '#ffffff';
+        fields.cardPadraoBgEnd.value = data.cardPadraoBgEnd || '#f0f0f0';
+        fields.cardPadraoBorder.value = data.cardPadraoBorder || '#fbc02d';
+        fields.cardPadraoTextName.value = data.cardPadraoTextName || '#333333';
+        fields.cardPadraoTextPrice.value = data.cardPadraoTextPrice || '#d32f2f';
+
+        fields.cardLevaBgStart.value = data.cardLevaBgStart || '#0f2027';
+        fields.cardLevaBgEnd.value = data.cardLevaBgEnd || '#2c5364';
+        fields.cardLevaBorder.value = data.cardLevaBorder || '#fbc02d';
+        fields.cardLevaTextName.value = data.cardLevaTextName || '#ffffff';
+        fields.cardLeveBg.value = data.cardLeveBg || '#7a5c00';
+        fields.cardPagueBg.value = data.cardPagueBg || '#7a1020';
+        fields.cardLevaUnitPrice.value = data.cardLevaUnitPrice || '#fbc02d';
+
+        fields.cardDescBgStart.value = data.cardDescBgStart || '#ffffff';
+        fields.cardDescBgEnd.value = data.cardDescBgEnd || '#ffffff';
+        fields.cardDescBorder.value = data.cardDescBorder || '#d32f2f';
+        fields.cardDescTextName.value = data.cardDescTextName || '#1a1a1a';
+        fields.cardDescBadgeBg.value = data.cardDescBadgeBg || '#d32f2f';
+        fields.cardDescBadgeText.value = data.cardDescBadgeText || '#ffffff';
+        fields.cardDescNewPrice.value = data.cardDescNewPrice || '#d32f2f';
+
+        fields.cardPackBgStart.value = data.cardPackBgStart || '#0d1b2a';
+        fields.cardPackBgEnd.value = data.cardPackBgEnd || '#1b263b';
+        fields.cardPackBorder.value = data.cardPackBorder || '#fbc02d';
+        fields.cardPackTextName.value = data.cardPackTextName || '#ffffff';
+        fields.cardPackPrice.value = data.cardPackPrice || '#fbc02d';
+
         updateSummary();
+        syncAllPreviews();
     } catch (err) {
         showToast('Erro ao carregar visual da tela.', 'error');
     }
@@ -361,6 +532,34 @@ document.getElementById('btnRestoreDefaults').addEventListener('click', function
         setColor(fields.displayBgCenterColor, '#222222');
         setColor(fields.displayFooterBgColor, '#111111');
 
+        setColor(fields.cardPadraoBgStart, '#ffffff');
+        setColor(fields.cardPadraoBgEnd, '#f0f0f0');
+        setColor(fields.cardPadraoBorder, '#fbc02d');
+        setColor(fields.cardPadraoTextName, '#333333');
+        setColor(fields.cardPadraoTextPrice, '#d32f2f');
+
+        setColor(fields.cardLevaBgStart, '#0f2027');
+        setColor(fields.cardLevaBgEnd, '#2c5364');
+        setColor(fields.cardLevaBorder, '#fbc02d');
+        setColor(fields.cardLevaTextName, '#ffffff');
+        setColor(fields.cardLeveBg, '#7a5c00');
+        setColor(fields.cardPagueBg, '#7a1020');
+        setColor(fields.cardLevaUnitPrice, '#fbc02d');
+
+        setColor(fields.cardDescBgStart, '#ffffff');
+        setColor(fields.cardDescBgEnd, '#ffffff');
+        setColor(fields.cardDescBorder, '#d32f2f');
+        setColor(fields.cardDescTextName, '#1a1a1a');
+        setColor(fields.cardDescBadgeBg, '#d32f2f');
+        setColor(fields.cardDescBadgeText, '#ffffff');
+        setColor(fields.cardDescNewPrice, '#d32f2f');
+
+        setColor(fields.cardPackBgStart, '#0d1b2a');
+        setColor(fields.cardPackBgEnd, '#1b263b');
+        setColor(fields.cardPackBorder, '#fbc02d');
+        setColor(fields.cardPackTextName, '#ffffff');
+        setColor(fields.cardPackPrice, '#fbc02d');
+
         showToast('Padrões de fábrica aplicados temporariamente. Clique em Salvar para gravar.', 'info');
         updateSummary();
     } else {
@@ -389,6 +588,7 @@ document.getElementById('btnRestoreDefaults').addEventListener('click', function
 initLayoutOptions();
 loadCurrentConfig();
 loadDisplayConfig();
+initLivePreviews();
 
 // Logica de alternancia de abas
 function initTabs() {

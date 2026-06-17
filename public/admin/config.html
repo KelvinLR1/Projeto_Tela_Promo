@@ -113,6 +113,15 @@
                                     <label for="password">Senha</label>
                                     <input type="password" id="password" placeholder="Senha do banco">
                                 </div>
+
+                                <div class="field">
+                                    <label for="dbMockFallback">Modo de Demonstração (Dados Mock)</label>
+                                    <select id="dbMockFallback" required>
+                                        <option value="true">Ativado (Exibe dados fictícios se o banco de dados não estiver conectado)</option>
+                                        <option value="false">Desativado (Exibe somente ofertas reais do banco de dados ou a mensagem de sem promoções)</option>
+                                    </select>
+                                    <p class="hint">Se desativado, o sistema nunca exibirá ofertas de demonstração fictícias se a conexão falhar ou não estiver configurada.</p>
+                                </div>
                             </div>
                         </section>
                     </div>
@@ -224,6 +233,48 @@
                                                 <td><span class="badge-opt">Opcional</span></td>
                                                 <td>Texto livre para o badge (ex: &ldquo;SÓ HOJE&rdquo;). Substitui todas as regras de data/hora.</td>
                                             </tr>
+                                            <tr>
+                                                <td><code>tipo_promo</code></td>
+                                                <td>TEXT</td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Tipo de promoção: <code>preco_fixo</code>, <code>leva_paga</code>, <code>desconto</code> ou <code>pack</code> (padrão: <code>preco_fixo</code>).</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>qtd_leva</code></td>
+                                                <td>INTEGER</td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Quantidade total de itens que o cliente leva na promoção Leva e Pague (ex: 3).</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>qtd_paga</code></td>
+                                                <td>INTEGER</td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Quantidade de itens cobrados na promoção Leva e Pague (ex: 2).</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>percentual_desconto</code></td>
+                                                <td>DECIMAL</td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Porcentagem de desconto na promoção de Desconto (ex: 10 para 10% OFF).</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>qtd_minima</code></td>
+                                                <td>INTEGER</td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Quantidade mínima de itens para ativar o desconto (ex: 3).</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>qtd_pack</code></td>
+                                                <td>INTEGER</td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Quantidade de itens inclusos no pack de preço fixo (ex: 3 por R$ 30,00).</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>condicao_qty</code></td>
+                                                <td>TEXT</td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>Modo da quantidade (Desconto/Pack): <code>a_partir</code> (A partir de) ou <code>a_cada</code> (A cada).</td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -277,31 +328,276 @@
                                     </div>
                                 </div>
 
-                                <div class="color-grid">
-                                    <label class="color-field" for="displayPrimaryColor">
-                                        <span>Cor Principal</span>
-                                        <input type="color" id="displayPrimaryColor">
-                                    </label>
-                                    <label class="color-field" for="displayHeaderMidColor">
-                                        <span>Meio do Cabeçalho</span>
-                                        <input type="color" id="displayHeaderMidColor">
-                                    </label>
-                                    <label class="color-field" for="displayAccentColor">
-                                        <span>Cor Destaque</span>
-                                        <input type="color" id="displayAccentColor">
-                                    </label>
-                                    <label class="color-field" for="displayBackgroundColor">
-                                        <span>Cor Fundo</span>
-                                        <input type="color" id="displayBackgroundColor">
-                                    </label>
-                                    <label class="color-field" for="displayBgCenterColor">
-                                        <span>Centro do Fundo</span>
-                                        <input type="color" id="displayBgCenterColor">
-                                    </label>
-                                    <label class="color-field" for="displayFooterBgColor">
-                                        <span>Fundo do Rodapé</span>
-                                        <input type="color" id="displayFooterBgColor">
-                                    </label>
+                                <div class="settings-group" style="margin-top: 20px;">
+                                    <h3 style="display: flex; align-items: center; gap: 8px; font-size: 1.05rem; font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 16px;">🖥️ Cores Gerais da Tela</h3>
+                                    <p class="hint" style="margin-bottom: 20px; font-style: italic;">Customize o esquema de cores geral da tela de exibição (fundo, cabeçalho e rodapé) e veja a pré-visualização ao vivo.</p>
+
+                                    <div class="fieldset-content">
+                                        <div class="fieldset-controls">
+                                            <div class="color-grid">
+                                                <label class="color-field" for="displayPrimaryColor">
+                                                    <span>Cor Principal</span>
+                                                    <input type="color" id="displayPrimaryColor">
+                                                </label>
+                                                <label class="color-field" for="displayHeaderMidColor">
+                                                    <span>Meio do Cabeçalho</span>
+                                                    <input type="color" id="displayHeaderMidColor">
+                                                </label>
+                                                <label class="color-field" for="displayAccentColor">
+                                                    <span>Cor Destaque</span>
+                                                    <input type="color" id="displayAccentColor">
+                                                </label>
+                                                <label class="color-field" for="displayBackgroundColor">
+                                                    <span>Cor Fundo</span>
+                                                    <input type="color" id="displayBackgroundColor">
+                                                </label>
+                                                <label class="color-field" for="displayBgCenterColor">
+                                                    <span>Centro do Fundo</span>
+                                                    <input type="color" id="displayBgCenterColor">
+                                                </label>
+                                                <label class="color-field" for="displayFooterBgColor">
+                                                    <span>Fundo do Rodapé</span>
+                                                    <input type="color" id="displayFooterBgColor">
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="fieldset-preview">
+                                            <div class="screen-preview" id="previewScreen">
+                                                <header class="screen-header-preview">
+                                                    <div class="screen-logo-preview">🛍️</div>
+                                                    <div class="screen-title-preview" id="previewScreenTitle">OFERTAS IMPERDIVEIS</div>
+                                                    <div class="screen-logo-preview">🛍️</div>
+                                                </header>
+                                                <main class="screen-body-preview">
+                                                    <div class="screen-card-placeholder"></div>
+                                                    <div class="screen-card-placeholder"></div>
+                                                    <div class="screen-card-placeholder"></div>
+                                                    <div class="screen-card-placeholder"></div>
+                                                </main>
+                                                <footer class="screen-footer-preview">
+                                                    <div class="screen-footer-text-preview" id="previewScreenFooter">APROVEITE! PROMOÇÕES VÁLIDAS ENQUANTO DURAREM OS ESTOQUES</div>
+                                                </footer>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="settings-group" style="margin-top: 20px;">
+                                    <h3 style="display: flex; align-items: center; gap: 8px; font-size: 1.05rem; font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 16px;">🎨 Cores dos Cards (Promoções)</h3>
+                                    <p class="hint" style="margin-bottom: 20px; font-style: italic;">Customize o esquema de cores de cada tipo de card e acompanhe o resultado no preview em tempo real.</p>
+
+                                    <!-- CARD PADRÃO -->
+                                    <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 20px; background: rgba(0,0,0,0.12);">
+                                        <legend style="padding: 0 10px; font-size: 0.76rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em;">Card Padrão (Preço Fixo)</legend>
+                                        <div class="fieldset-content">
+                                            <div class="fieldset-controls">
+                                                <div class="color-grid">
+                                                    <label class="color-field" for="cardPadraoBgStart">
+                                                        <span>Fundo Gradiente Início</span>
+                                                        <input type="color" id="cardPadraoBgStart">
+                                                    </label>
+                                                    <label class="color-field" for="cardPadraoBgEnd">
+                                                        <span>Fundo Gradiente Fim</span>
+                                                        <input type="color" id="cardPadraoBgEnd">
+                                                    </label>
+                                                    <label class="color-field" for="cardPadraoBorder">
+                                                        <span>Cor da Borda</span>
+                                                        <input type="color" id="cardPadraoBorder">
+                                                    </label>
+                                                    <label class="color-field" for="cardPadraoTextName">
+                                                        <span>Cor do Nome do Produto</span>
+                                                        <input type="color" id="cardPadraoTextName">
+                                                    </label>
+                                                    <label class="color-field" for="cardPadraoTextPrice">
+                                                        <span>Cor do Preço</span>
+                                                        <input type="color" id="cardPadraoTextPrice">
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="fieldset-preview">
+                                                <div class="card-preview" id="previewCardPadrao">
+                                                    <div class="product-image-wrapper-preview">
+                                                        <span class="preview-img-placeholder">☕</span>
+                                                    </div>
+                                                    <div class="product-info-preview">
+                                                        <div class="product-name-preview">Café Torrado e Moído 500g</div>
+                                                        <div class="prices-preview">
+                                                            <div class="old-price-preview">De: R$ 18,90</div>
+                                                            <div class="new-price-preview">R$ 14,50</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </fieldset>
+
+                                    <!-- CARD LEVA E PAGUE -->
+                                    <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 20px; background: rgba(0,0,0,0.12);">
+                                        <legend style="padding: 0 10px; font-size: 0.76rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em;">Card Leva e Pague</legend>
+                                        <div class="fieldset-content">
+                                            <div class="fieldset-controls">
+                                                <div class="color-grid">
+                                                    <label class="color-field" for="cardLevaBgStart">
+                                                        <span>Fundo Gradiente Início</span>
+                                                        <input type="color" id="cardLevaBgStart">
+                                                    </label>
+                                                    <label class="color-field" for="cardLevaBgEnd">
+                                                        <span>Fundo Gradiente Fim</span>
+                                                        <input type="color" id="cardLevaBgEnd">
+                                                    </label>
+                                                    <label class="color-field" for="cardLevaBorder">
+                                                        <span>Cor da Borda</span>
+                                                        <input type="color" id="cardLevaBorder">
+                                                    </label>
+                                                    <label class="color-field" for="cardLevaTextName">
+                                                        <span>Cor do Nome do Produto</span>
+                                                        <input type="color" id="cardLevaTextName">
+                                                    </label>
+                                                    <label class="color-field" for="cardLeveBg">
+                                                        <span>Fundo Bloco LEVE</span>
+                                                        <input type="color" id="cardLeveBg">
+                                                    </label>
+                                                    <label class="color-field" for="cardPagueBg">
+                                                        <span>Fundo Bloco PAGUE</span>
+                                                        <input type="color" id="cardPagueBg">
+                                                    </label>
+                                                    <label class="color-field" for="cardLevaUnitPrice">
+                                                        <span>Preço Unitário</span>
+                                                        <input type="color" id="cardLevaUnitPrice">
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="fieldset-preview">
+                                                <div class="card-preview" id="previewCardLeva">
+                                                    <div class="product-image-wrapper-preview">
+                                                        <span class="preview-img-placeholder">🧼</span>
+                                                    </div>
+                                                    <div class="product-info-preview">
+                                                        <div class="product-name-preview">Sabonete Dove Fragrâncias 90g</div>
+                                                        <div class="lp-price-row">
+                                                            <span class="lp-unit-label">Unit.:</span>
+                                                            <span class="lp-unit-price">R$ 3,99</span>
+                                                        </div>
+                                                        <div class="lp-badge-wrap">
+                                                            <div class="lp-block lp-leve">
+                                                                <span class="lp-num">3</span>
+                                                                <span class="lp-label">Leve</span>
+                                                            </div>
+                                                            <span class="lp-sep">/</span>
+                                                            <div class="lp-block lp-pague">
+                                                                <span class="lp-num">2</span>
+                                                                <span class="lp-label">Pague</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </fieldset>
+
+                                    <!-- CARD DESCONTO -->
+                                    <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 20px; background: rgba(0,0,0,0.12);">
+                                        <legend style="padding: 0 10px; font-size: 0.76rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em;">Card Desconto (%)</legend>
+                                        <div class="fieldset-content">
+                                            <div class="fieldset-controls">
+                                                <div class="color-grid">
+                                                    <label class="color-field" for="cardDescBgStart">
+                                                        <span>Fundo Gradiente Início</span>
+                                                        <input type="color" id="cardDescBgStart">
+                                                    </label>
+                                                    <label class="color-field" for="cardDescBgEnd">
+                                                        <span>Fundo Gradiente Fim</span>
+                                                        <input type="color" id="cardDescBgEnd">
+                                                    </label>
+                                                    <label class="color-field" for="cardDescBorder">
+                                                        <span>Cor da Borda</span>
+                                                        <input type="color" id="cardDescBorder">
+                                                    </label>
+                                                    <label class="color-field" for="cardDescTextName">
+                                                        <span>Cor do Nome do Produto</span>
+                                                        <input type="color" id="cardDescTextName">
+                                                    </label>
+                                                    <label class="color-field" for="cardDescBadgeBg">
+                                                        <span>Fundo Selo %</span>
+                                                        <input type="color" id="cardDescBadgeBg">
+                                                    </label>
+                                                    <label class="color-field" for="cardDescBadgeText">
+                                                        <span>Cor Texto Selo %</span>
+                                                        <input type="color" id="cardDescBadgeText">
+                                                    </label>
+                                                    <label class="color-field" for="cardDescNewPrice">
+                                                        <span>Preço Novo</span>
+                                                        <input type="color" id="cardDescNewPrice">
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="fieldset-preview">
+                                                <div class="card-preview" id="previewCardDesc">
+                                                    <div class="product-image-wrapper-preview">
+                                                        <span class="preview-img-placeholder">🧴</span>
+                                                    </div>
+                                                    <div class="product-info-preview">
+                                                        <div class="product-name-preview">Shampoo de Nutrição Premium 400ml</div>
+                                                        <div class="desc-qty-cond-preview">A partir de 3 unidades</div>
+                                                        <div class="desc-row">
+                                                            <div class="desc-pct-badge">
+                                                                <span class="desc-pct-num">10%</span>
+                                                                <span class="desc-pct-label">OFF</span>
+                                                            </div>
+                                                            <div class="desc-prices">
+                                                                <div class="old-price-preview">De: R$ 18,90</div>
+                                                                <div class="new-price-preview">R$ 17,01</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </fieldset>
+
+                                    <!-- CARD PACK -->
+                                    <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; background: rgba(0,0,0,0.12);">
+                                        <legend style="padding: 0 10px; font-size: 0.76rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em;">Card Pack (Qtd por Preço)</legend>
+                                        <div class="fieldset-content">
+                                            <div class="fieldset-controls">
+                                                <div class="color-grid">
+                                                    <label class="color-field" for="cardPackBgStart">
+                                                        <span>Fundo Gradiente Início</span>
+                                                        <input type="color" id="cardPackBgStart">
+                                                    </label>
+                                                    <label class="color-field" for="cardPackBgEnd">
+                                                        <span>Fundo Gradiente Fim</span>
+                                                        <input type="color" id="cardPackBgEnd">
+                                                    </label>
+                                                    <label class="color-field" for="cardPackBorder">
+                                                        <span>Cor da Borda</span>
+                                                        <input type="color" id="cardPackBorder">
+                                                    </label>
+                                                    <label class="color-field" for="cardPackTextName">
+                                                        <span>Cor do Nome do Produto</span>
+                                                        <input type="color" id="cardPackTextName">
+                                                    </label>
+                                                    <label class="color-field" for="cardPackPrice">
+                                                        <span>Preço em Destaque</span>
+                                                        <input type="color" id="cardPackPrice">
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="fieldset-preview">
+                                                <div class="card-preview" id="previewCardPack">
+                                                    <div class="product-image-wrapper-preview">
+                                                        <span class="preview-img-placeholder">🥤</span>
+                                                    </div>
+                                                    <div class="product-info-preview">
+                                                        <div class="product-name-preview">Refresco Néctar de Frutas 1L</div>
+                                                        <div class="pack-qty-label">Leve 3 por apenas:</div>
+                                                        <div class="pack-price-badge">R$ 9,99</div>
+                                                        <div class="pack-old-price">Preço normal: R$ 12,00</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </fieldset>
                                 </div>
 
                                 <div class="settings-group">

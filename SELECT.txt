@@ -59,3 +59,69 @@ WHERE
     5 = Sexta-feira
     6 = Sábado
     */
+
+    /*
+    ═══════════════════════════════════════════════════════════════
+     TIPOS DE PROMOÇÃO — campo tipo_promo
+    ═══════════════════════════════════════════════════════════════
+    O sistema suporta 4 tipos de promoção com layouts visuais distintos.
+    Adicione o campo tipo_promo ao SELECT conforme o tipo de cada promoção.
+    Se omitido ou NULL, usa o layout padrão (preco_fixo).
+
+    ┌──────────────┬────────────────────────────────────────────────┐
+    │ tipo_promo   │ Descrição                                      │
+    ├──────────────┼────────────────────────────────────────────────┤
+    │ preco_fixo   │ Preço promocional simples (layout atual)       │
+    │ leva_paga    │ Leve X Pague Y (ex: Leve 3, Pague 2)          │
+    │ desconto     │ Desconto percentual (ex: 10% OFF)              │
+    │ pack         │ Quantidade por preço fixo (ex: 3 por R$30)    │
+    └──────────────┴────────────────────────────────────────────────┘
+
+    CAMPOS AUXILIARES POR TIPO:
+
+    leva_paga:
+      qtd_leva  → quantidade que o cliente leva  (ex: 3)
+      qtd_paga  → quantidade que o cliente paga  (ex: 2)
+      preco_atual → preço unitário (opcional, exibido abaixo do badge)
+
+    desconto:
+      percentual_desconto → número do desconto        (ex: 10 para 10%)
+      qtd_minima          → qtd mínima para o desconto (ex: 3)
+                            se NULL ou 1, não exibe a condição de quantidade
+      condicao_qty        → modo da quantidade: 'a_partir' ou 'a_cada'.
+                            se omitido, o padrão é 'a_partir' (exibe "A partir de X unidades").
+      preco_anterior      → preço original (para exibir riscado)
+      preco_atual         → preço com desconto
+
+    pack:
+      qtd_pack   → quantidade de itens no pack  (ex: 3)
+      condicao_qty        → modo da quantidade: 'a_partir' ou 'a_cada'.
+                            se omitido, o padrão é 'a_partir' (exibe "A partir de X unidades por apenas").
+      preco_atual → preço total do pack          (ex: 30.00)
+      preco_anterior → preço original (opcional, exibido riscado)
+
+    preco_fixo:
+      preco_anterior → preço original (para exibir riscado)
+      preco_atual    → preço promocional
+
+    ───────────────────────────────────────────────────────────────
+    EXEMPLOS DE USO NO SQL:
+
+    -- Leva e Paga (Leve 3, Pague 2):
+    'leva_paga' AS tipo_promo,
+    3            AS qtd_leva,
+    2            AS qtd_paga,
+
+    -- Desconto percentual:
+    'desconto'   AS tipo_promo,
+    10           AS percentual_desconto,
+
+    -- Pack por preço:
+    'pack'       AS tipo_promo,
+    3            AS qtd_pack,
+
+    -- Preço fixo (padrão):
+    'preco_fixo' AS tipo_promo,
+    -- ou simplesmente: NULL AS tipo_promo
+    ═══════════════════════════════════════════════════════════════
+    */

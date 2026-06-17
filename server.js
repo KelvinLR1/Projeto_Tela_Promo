@@ -158,7 +158,35 @@ function getDisplayConfig() {
     backgroundColor: sanitizeColor(process.env.DISPLAY_BACKGROUND_COLOR, '#111111'),
     bgCenterColor: sanitizeColor(process.env.DISPLAY_BG_CENTER_COLOR, '#222222'),
     footerBgColor: sanitizeColor(process.env.DISPLAY_FOOTER_BG_COLOR, '#111111'),
-    filterActiveOnly: process.env.DISPLAY_FILTER_ACTIVE_ONLY === 'true'
+    filterActiveOnly: process.env.DISPLAY_FILTER_ACTIVE_ONLY === 'true',
+
+    cardPadraoBgStart: sanitizeColor(process.env.CARD_PADRAO_BG_START, '#ffffff'),
+    cardPadraoBgEnd: sanitizeColor(process.env.CARD_PADRAO_BG_END, '#f0f0f0'),
+    cardPadraoBorder: sanitizeColor(process.env.CARD_PADRAO_BORDER, '#fbc02d'),
+    cardPadraoTextName: sanitizeColor(process.env.CARD_PADRAO_TEXT_NAME, '#333333'),
+    cardPadraoTextPrice: sanitizeColor(process.env.CARD_PADRAO_TEXT_PRICE, '#d32f2f'),
+
+    cardLevaBgStart: sanitizeColor(process.env.CARD_LEVA_BG_START, '#0f2027'),
+    cardLevaBgEnd: sanitizeColor(process.env.CARD_LEVA_BG_END, '#2c5364'),
+    cardLevaBorder: sanitizeColor(process.env.CARD_LEVA_BORDER, '#fbc02d'),
+    cardLevaTextName: sanitizeColor(process.env.CARD_LEVA_TEXT_NAME, '#ffffff'),
+    cardLeveBg: sanitizeColor(process.env.CARD_LEVE_BG, '#7a5c00'),
+    cardPagueBg: sanitizeColor(process.env.CARD_PAGUE_BG, '#7a1020'),
+    cardLevaUnitPrice: sanitizeColor(process.env.CARD_LEVA_UNIT_PRICE, '#fbc02d'),
+
+    cardDescBgStart: sanitizeColor(process.env.CARD_DESC_BG_START, '#ffffff'),
+    cardDescBgEnd: sanitizeColor(process.env.CARD_DESC_BG_END, '#ffffff'),
+    cardDescBorder: sanitizeColor(process.env.CARD_DESC_BORDER, '#d32f2f'),
+    cardDescTextName: sanitizeColor(process.env.CARD_DESC_TEXT_NAME, '#1a1a1a'),
+    cardDescBadgeBg: sanitizeColor(process.env.CARD_DESC_BADGE_BG, '#d32f2f'),
+    cardDescBadgeText: sanitizeColor(process.env.CARD_DESC_BADGE_TEXT, '#ffffff'),
+    cardDescNewPrice: sanitizeColor(process.env.CARD_DESC_NEW_PRICE, '#d32f2f'),
+
+    cardPackBgStart: sanitizeColor(process.env.CARD_PACK_BG_START, '#0d1b2a'),
+    cardPackBgEnd: sanitizeColor(process.env.CARD_PACK_BG_END, '#1b263b'),
+    cardPackBorder: sanitizeColor(process.env.CARD_PACK_BORDER, '#fbc02d'),
+    cardPackTextName: sanitizeColor(process.env.CARD_PACK_TEXT_NAME, '#ffffff'),
+    cardPackPrice: sanitizeColor(process.env.CARD_PACK_PRICE, '#fbc02d')
   };
 }
 
@@ -460,12 +488,21 @@ app.get('/api/promocoes', async (req, res) => {
         console.error('◇ [API] Falha ao consultar banco de dados:', dbErr.message);
         // Reseta o pool para forçar uma nova tentativa de conexão no futuro
         dbPool = null;
+        if (process.env.DB_MOCK_FALLBACK === 'false') {
+          console.log('◇ [API] Falha ao consultar banco e Mock desativado. Retornando array vazio.');
+          return res.json([]);
+        }
         // Com banco configurado, retorna erro — nunca dados mock
         return res.status(503).json({ error: 'Falha temporária ao consultar o banco de dados. Tente novamente em instantes.' });
       }
     }
 
     // Banco NÃO configurado (senha padrão, tipo desconhecido, etc.): usa dados MOCK de demonstração
+    if (process.env.DB_MOCK_FALLBACK === 'false') {
+      console.log('◇ [API] Banco não configurado e Mock desativado. Retornando array vazio.');
+      return res.json([]);
+    }
+
     console.log('◇ [API] Banco não configurado. Exibindo dados de demonstração (MOCK).');
 
     const todayStr = new Date().toISOString().split('T')[0];
@@ -496,10 +533,14 @@ app.get('/api/promocoes', async (req, res) => {
       { id: 16, nome_produto: "Creme Dental Tripla Ação 90g", preco_anterior: 4.50, preco_atual: 3.29, link_imagem: "https://loremflickr.com/400/400/toothpaste/all", data_validade: "2026-12-31" }
     ];
     mockProdutos.unshift(
-      { id: 101, nome_produto: "Arroz Branco Tipo 1 5kg Premium", preco_anterior: 25.90, preco_atual: 19.99, link_imagem: "https://loremflickr.com/400/400/rice,package/all", data_inicio: todayStr, data_fim: nextWeekStr },
-      { id: 102, nome_produto: "Feijao Carioca 1kg", preco_anterior: 8.50, preco_atual: 5.99, link_imagem: "", data_inicio: todayStr, data_fim: nextWeekStr, dias_semana: "1,3" },
-      { id: 103, nome_produto: "Oleo de Soja 900ml", preco_anterior: null, preco_atual: 5.49, link_imagem: "https://loremflickr.com/400/400/oil,bottle/all", data_inicio: todayStr, data_fim: todayStr, hora_inicio: "08:00", hora_fim: "10:00" },
-      { id: 104, nome_produto: "Cafe Torrado e Moido 500g", preco_anterior: 18.90, preco_atual: 14.50, link_imagem: "https://loremflickr.com/400/400/coffee,bag/all", data_inicio: todayStr, data_fim: nextWeekStr, dias_semana: "1,3,5", hora_inicio: "08:00", hora_fim: "10:00" }
+      // Tipo: preco_fixo (padrão)
+      { id: 101, nome_produto: "Arroz Branco Tipo 1 5kg", preco_anterior: 25.90, preco_atual: 19.99, link_imagem: "https://loremflickr.com/400/400/rice,package/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'preco_fixo' },
+      // Tipo: leva_paga
+      { id: 102, nome_produto: "Sabonete Dove 90g", preco_anterior: null, preco_atual: 3.99, link_imagem: "https://loremflickr.com/400/400/soap,bar/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'leva_paga', qtd_leva: 3, qtd_paga: 2 },
+      // Tipo: desconto
+      { id: 103, nome_produto: "Shampoo Premium 400ml", preco_anterior: 18.90, preco_atual: 17.01, link_imagem: "https://loremflickr.com/400/400/shampoo,bottle/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'desconto', percentual_desconto: 10, qtd_minima: 3, condicao_qty: 'a_cada' },
+      // Tipo: pack
+      { id: 104, nome_produto: "Refresco XXX 1L", preco_anterior: 12.00, preco_atual: 9.99, link_imagem: "https://loremflickr.com/400/400/juice,bottle/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'pack', qtd_pack: 3, condicao_qty: 'a_partir' }
     );
 
     res.json(mockProdutos);
@@ -608,7 +649,8 @@ app.get('/api/config/current', cookieAuth, (req, res) => {
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD === 'sua_senha_aqui' ? '' : process.env.DB_PASSWORD,
     dbQuery: process.env.DB_QUERY || '',
-    dbInstance: process.env.DB_INSTANCE || ''
+    dbInstance: process.env.DB_INSTANCE || '',
+    dbMockFallback: process.env.DB_MOCK_FALLBACK !== 'false'
   });
 });
 
@@ -771,6 +813,7 @@ function buildEnvContent() {
     envLine('DB_PASSWORD', process.env.DB_PASSWORD || ''),
     envLine('DB_NAME', process.env.DB_NAME || 'supermercado_db'),
     envLine('DB_QUERY', process.env.DB_QUERY || ''),
+    envLine('DB_MOCK_FALLBACK', process.env.DB_MOCK_FALLBACK || 'true'),
     envLine('PORT', PORT),
     envLine('ADMIN_USER', process.env.ADMIN_USER || 'admin'),
     envLine('ADMIN_PASS', process.env.ADMIN_PASS || 'admin123'),
@@ -784,7 +827,7 @@ function buildEnvContent() {
     envLine('DISPLAY_FETCH_INTERVAL', process.env.DISPLAY_FETCH_INTERVAL || '30000'),
     envLine('DISPLAY_CAROUSEL_INTERVAL', process.env.DISPLAY_CAROUSEL_INTERVAL || '10000'),
     envLine('DISPLAY_VITRINE_ITEM_INTERVAL', process.env.DISPLAY_VITRINE_ITEM_INTERVAL || '6000'),
-
+ 
     envLine('DISPLAY_PRIMARY_COLOR', process.env.DISPLAY_PRIMARY_COLOR || '#d32f2f'),
     envLine('DISPLAY_HEADER_MID_COLOR', process.env.DISPLAY_HEADER_MID_COLOR || '#f44336'),
     envLine('DISPLAY_ACCENT_COLOR', process.env.DISPLAY_ACCENT_COLOR || '#fbc02d'),
@@ -792,6 +835,35 @@ function buildEnvContent() {
     envLine('DISPLAY_BG_CENTER_COLOR', process.env.DISPLAY_BG_CENTER_COLOR || '#222222'),
     envLine('DISPLAY_FOOTER_BG_COLOR', process.env.DISPLAY_FOOTER_BG_COLOR || '#111111'),
     envLine('DISPLAY_FILTER_ACTIVE_ONLY', process.env.DISPLAY_FILTER_ACTIVE_ONLY || 'false'),
+    '',
+    '# Customizacao de Cores dos Cards',
+    envLine('CARD_PADRAO_BG_START', process.env.CARD_PADRAO_BG_START || '#ffffff'),
+    envLine('CARD_PADRAO_BG_END', process.env.CARD_PADRAO_BG_END || '#f0f0f0'),
+    envLine('CARD_PADRAO_BORDER', process.env.CARD_PADRAO_BORDER || '#fbc02d'),
+    envLine('CARD_PADRAO_TEXT_NAME', process.env.CARD_PADRAO_TEXT_NAME || '#333333'),
+    envLine('CARD_PADRAO_TEXT_PRICE', process.env.CARD_PADRAO_TEXT_PRICE || '#d32f2f'),
+    '',
+    envLine('CARD_LEVA_BG_START', process.env.CARD_LEVA_BG_START || '#0f2027'),
+    envLine('CARD_LEVA_BG_END', process.env.CARD_LEVA_BG_END || '#2c5364'),
+    envLine('CARD_LEVA_BORDER', process.env.CARD_LEVA_BORDER || '#fbc02d'),
+    envLine('CARD_LEVA_TEXT_NAME', process.env.CARD_LEVA_TEXT_NAME || '#ffffff'),
+    envLine('CARD_LEVE_BG', process.env.CARD_LEVE_BG || '#7a5c00'),
+    envLine('CARD_PAGUE_BG', process.env.CARD_PAGUE_BG || '#7a1020'),
+    envLine('CARD_LEVA_UNIT_PRICE', process.env.CARD_LEVA_UNIT_PRICE || '#fbc02d'),
+    '',
+    envLine('CARD_DESC_BG_START', process.env.CARD_DESC_BG_START || '#ffffff'),
+    envLine('CARD_DESC_BG_END', process.env.CARD_DESC_BG_END || '#ffffff'),
+    envLine('CARD_DESC_BORDER', process.env.CARD_DESC_BORDER || '#d32f2f'),
+    envLine('CARD_DESC_TEXT_NAME', process.env.CARD_DESC_TEXT_NAME || '#1a1a1a'),
+    envLine('CARD_DESC_BADGE_BG', process.env.CARD_DESC_BADGE_BG || '#d32f2f'),
+    envLine('CARD_DESC_BADGE_TEXT', process.env.CARD_DESC_BADGE_TEXT || '#ffffff'),
+    envLine('CARD_DESC_NEW_PRICE', process.env.CARD_DESC_NEW_PRICE || '#d32f2f'),
+    '',
+    envLine('CARD_PACK_BG_START', process.env.CARD_PACK_BG_START || '#0d1b2a'),
+    envLine('CARD_PACK_BG_END', process.env.CARD_PACK_BG_END || '#1b263b'),
+    envLine('CARD_PACK_BORDER', process.env.CARD_PACK_BORDER || '#fbc02d'),
+    envLine('CARD_PACK_TEXT_NAME', process.env.CARD_PACK_TEXT_NAME || '#ffffff'),
+    envLine('CARD_PACK_PRICE', process.env.CARD_PACK_PRICE || '#fbc02d'),
     ''
   ].join('\n');
 }
@@ -802,7 +874,7 @@ function saveEnvFile() {
 }
 
 app.post('/api/config/save', cookieAuth, async (req, res) => {
-  const { dbType, host, port, dbInstance, database, user, password, dbQuery } = req.body;
+  const { dbType, host, port, dbInstance, database, user, password, dbQuery, dbMockFallback } = req.body;
   const cleanedQuery = (dbQuery || '').trim();
 
   if (!isSafeSelectQuery(cleanedQuery)) {
@@ -818,6 +890,7 @@ app.post('/api/config/save', cookieAuth, async (req, res) => {
     process.env.DB_PASSWORD = password;
     process.env.DB_NAME = database;
     process.env.DB_QUERY = cleanedQuery.replace(/\t/g, '    ');
+    process.env.DB_MOCK_FALLBACK = dbMockFallback ? 'true' : 'false';
     saveEnvFile();
 
     // Derruba o pool antigo para recriar com a nova configuração na próxima requisição
@@ -861,7 +934,35 @@ app.post('/api/config/display/save', cookieAuth, (req, res) => {
       backgroundColor,
       bgCenterColor,
       footerBgColor,
-      filterActiveOnly
+      filterActiveOnly,
+
+      cardPadraoBgStart,
+      cardPadraoBgEnd,
+      cardPadraoBorder,
+      cardPadraoTextName,
+      cardPadraoTextPrice,
+
+      cardLevaBgStart,
+      cardLevaBgEnd,
+      cardLevaBorder,
+      cardLevaTextName,
+      cardLeveBg,
+      cardPagueBg,
+      cardLevaUnitPrice,
+
+      cardDescBgStart,
+      cardDescBgEnd,
+      cardDescBorder,
+      cardDescTextName,
+      cardDescBadgeBg,
+      cardDescBadgeText,
+      cardDescNewPrice,
+
+      cardPackBgStart,
+      cardPackBgEnd,
+      cardPackBorder,
+      cardPackTextName,
+      cardPackPrice
     } = req.body;
 
     process.env.LOCAL_IMAGES_PATH = sanitizeWindowsPath(localImagesPath);
@@ -882,6 +983,34 @@ app.post('/api/config/display/save', cookieAuth, (req, res) => {
     process.env.DISPLAY_BG_CENTER_COLOR = sanitizeColor(bgCenterColor, '#222222');
     process.env.DISPLAY_FOOTER_BG_COLOR = sanitizeColor(footerBgColor, '#111111');
     process.env.DISPLAY_FILTER_ACTIVE_ONLY = filterActiveOnly ? 'true' : 'false';
+
+    process.env.CARD_PADRAO_BG_START = sanitizeColor(cardPadraoBgStart, '#ffffff');
+    process.env.CARD_PADRAO_BG_END = sanitizeColor(cardPadraoBgEnd, '#f0f0f0');
+    process.env.CARD_PADRAO_BORDER = sanitizeColor(cardPadraoBorder, '#fbc02d');
+    process.env.CARD_PADRAO_TEXT_NAME = sanitizeColor(cardPadraoTextName, '#333333');
+    process.env.CARD_PADRAO_TEXT_PRICE = sanitizeColor(cardPadraoTextPrice, '#d32f2f');
+
+    process.env.CARD_LEVA_BG_START = sanitizeColor(cardLevaBgStart, '#0f2027');
+    process.env.CARD_LEVA_BG_END = sanitizeColor(cardLevaBgEnd, '#2c5364');
+    process.env.CARD_LEVA_BORDER = sanitizeColor(cardLevaBorder, '#fbc02d');
+    process.env.CARD_LEVA_TEXT_NAME = sanitizeColor(cardLevaTextName, '#ffffff');
+    process.env.CARD_LEVE_BG = sanitizeColor(cardLeveBg, '#7a5c00');
+    process.env.CARD_PAGUE_BG = sanitizeColor(cardPagueBg, '#7a1020');
+    process.env.CARD_LEVA_UNIT_PRICE = sanitizeColor(cardLevaUnitPrice, '#fbc02d');
+
+    process.env.CARD_DESC_BG_START = sanitizeColor(cardDescBgStart, '#ffffff');
+    process.env.CARD_DESC_BG_END = sanitizeColor(cardDescBgEnd, '#ffffff');
+    process.env.CARD_DESC_BORDER = sanitizeColor(cardDescBorder, '#d32f2f');
+    process.env.CARD_DESC_TEXT_NAME = sanitizeColor(cardDescTextName, '#1a1a1a');
+    process.env.CARD_DESC_BADGE_BG = sanitizeColor(cardDescBadgeBg, '#d32f2f');
+    process.env.CARD_DESC_BADGE_TEXT = sanitizeColor(cardDescBadgeText, '#ffffff');
+    process.env.CARD_DESC_NEW_PRICE = sanitizeColor(cardDescNewPrice, '#d32f2f');
+
+    process.env.CARD_PACK_BG_START = sanitizeColor(cardPackBgStart, '#0d1b2a');
+    process.env.CARD_PACK_BG_END = sanitizeColor(cardPackBgEnd, '#1b263b');
+    process.env.CARD_PACK_BORDER = sanitizeColor(cardPackBorder, '#fbc02d');
+    process.env.CARD_PACK_TEXT_NAME = sanitizeColor(cardPackTextName, '#ffffff');
+    process.env.CARD_PACK_PRICE = sanitizeColor(cardPackPrice, '#fbc02d');
 
     saveEnvFile();
     res.json({ success: true, message: 'Configuracoes visuais salvas!', config: getDisplayConfig() });

@@ -101,6 +101,34 @@ function applyDisplayConfig(config) {
     document.documentElement.style.setProperty('--promo-bg-center', config.bgCenterColor || '#222222');
     document.documentElement.style.setProperty('--promo-footer-bg', config.footerBgColor || '#111111');
 
+    document.documentElement.style.setProperty('--card-padrao-bg-start', config.cardPadraoBgStart || '#ffffff');
+    document.documentElement.style.setProperty('--card-padrao-bg-end', config.cardPadraoBgEnd || '#f0f0f0');
+    document.documentElement.style.setProperty('--card-padrao-border', config.cardPadraoBorder || '#fbc02d');
+    document.documentElement.style.setProperty('--card-padrao-text-name', config.cardPadraoTextName || '#333333');
+    document.documentElement.style.setProperty('--card-padrao-text-price', config.cardPadraoTextPrice || '#d32f2f');
+
+    document.documentElement.style.setProperty('--card-leva-bg-start', config.cardLevaBgStart || '#0f2027');
+    document.documentElement.style.setProperty('--card-leva-bg-end', config.cardLevaBgEnd || '#2c5364');
+    document.documentElement.style.setProperty('--card-leva-border', config.cardLevaBorder || '#fbc02d');
+    document.documentElement.style.setProperty('--card-leva-text-name', config.cardLevaTextName || '#ffffff');
+    document.documentElement.style.setProperty('--card-leve-bg', config.cardLeveBg || '#7a5c00');
+    document.documentElement.style.setProperty('--card-pague-bg', config.cardPagueBg || '#7a1020');
+    document.documentElement.style.setProperty('--card-leva-unit-price', config.cardLevaUnitPrice || '#fbc02d');
+
+    document.documentElement.style.setProperty('--card-desc-bg-start', config.cardDescBgStart || '#ffffff');
+    document.documentElement.style.setProperty('--card-desc-bg-end', config.cardDescBgEnd || '#ffffff');
+    document.documentElement.style.setProperty('--card-desc-border', config.cardDescBorder || '#d32f2f');
+    document.documentElement.style.setProperty('--card-desc-text-name', config.cardDescTextName || '#1a1a1a');
+    document.documentElement.style.setProperty('--card-desc-badge-bg', config.cardDescBadgeBg || '#d32f2f');
+    document.documentElement.style.setProperty('--card-desc-badge-text', config.cardDescBadgeText || '#ffffff');
+    document.documentElement.style.setProperty('--card-desc-new-price', config.cardDescNewPrice || '#d32f2f');
+
+    document.documentElement.style.setProperty('--card-pack-bg-start', config.cardPackBgStart || '#0d1b2a');
+    document.documentElement.style.setProperty('--card-pack-bg-end', config.cardPackBgEnd || '#1b263b');
+    document.documentElement.style.setProperty('--card-pack-border', config.cardPackBorder || '#fbc02d');
+    document.documentElement.style.setProperty('--card-pack-text-name', config.cardPackTextName || '#ffffff');
+    document.documentElement.style.setProperty('--card-pack-price', config.cardPackPrice || '#fbc02d');
+
     applyLayout(requestedLayout || config.defaultLayout || 'padrao');
 }
 
@@ -311,6 +339,12 @@ function normalizePromotion(item) {
 
     const currentPrice = parseFloat(item.preco_atual);
 
+    // Tipo de promoção: 'preco_fixo' | 'leva_paga' | 'desconto' | 'pack'
+    // null/vazio -> comportamento padrão (preco_fixo)
+    const tipoRaw = String(item.tipo_promo || '').trim().toLowerCase();
+    const TIPOS_VALIDOS = ['preco_fixo', 'leva_paga', 'desconto', 'pack'];
+    const tipo_promo = TIPOS_VALIDOS.includes(tipoRaw) ? tipoRaw : 'preco_fixo';
+
     return {
         ...item,
         id: item.id ?? cryptoRandomId(),
@@ -324,7 +358,15 @@ function normalizePromotion(item) {
         dias_semana: item.dias_semana || '',
         hora_inicio: String(item.hora_inicio || '').trim(),
         hora_fim: String(item.hora_fim || '').trim(),
-        texto_validade: normalizeText(item.texto_validade || '')
+        texto_validade: normalizeText(item.texto_validade || ''),
+        // Campos de tipo de promoção
+        tipo_promo,
+        qtd_leva: item.qtd_leva != null ? parseInt(item.qtd_leva, 10) : null,
+        qtd_paga: item.qtd_paga != null ? parseInt(item.qtd_paga, 10) : null,
+        percentual_desconto: item.percentual_desconto != null ? parseFloat(item.percentual_desconto) : null,
+        qtd_minima: item.qtd_minima != null ? parseInt(item.qtd_minima, 10) : null, // quantidade mínima p/ ganhar o desconto
+        qtd_pack: item.qtd_pack != null ? parseInt(item.qtd_pack, 10) : null,
+        condicao_qty: String(item.condicao_qty || item.modo_qty || '').trim().toLowerCase()
     };
 }
 
@@ -716,45 +758,254 @@ function renderCurrentPage() {
 // Renderiza layouts padrao, destaque e compacto
 function renderGrid(itemsToShow) {
     itemsToShow.forEach(item => {
-        const clone = template.content.cloneNode(true);
-        const card = clone.querySelector('.product-card');
-        const imgWrapper = clone.querySelector('.product-image-wrapper');
-        const imgElement = clone.querySelector('.product-image');
-        
-        const validityText = getValidityBadgeText(item);
-        const validityParts = getValidityBadgeParts(item);
-        applyTextSizing(card, item);
-        if (validityParts.length > 0) card.classList.add('has-schedule');
+        const tipo = item.tipo_promo || 'preco_fixo';
 
-        if (layoutMode === 'sem-foto' || layoutMode === 'sem-foto-destaque') {
-            if (imgWrapper) imgWrapper.remove();
-            
-            // Cria um badge decorativo vermelho e amarelo
-            const badge = document.createElement('div');
-            badge.className = 'promo-badge';
-            badge.textContent = validityText || 'OFERTA IMPERDÍVEL';
-            clone.querySelector('.product-card').prepend(badge);
+        if (tipo === 'leva_paga') {
+            carouselContainer.appendChild(buildCardLevaPaga(item));
+        } else if (tipo === 'desconto') {
+            carouselContainer.appendChild(buildCardDesconto(item));
+        } else if (tipo === 'pack') {
+            carouselContainer.appendChild(buildCardPack(item));
         } else {
-            setProductImage(imgElement, imgWrapper, item.link_imagem);
-
-            const validityBadgeEl = clone.querySelector('.validity-badge');
-            renderValidityBadges(validityBadgeEl, item);
+            carouselContainer.appendChild(buildCardPrecoFixo(item));
         }
-        
-        clone.querySelector('.product-name').textContent = item.nome_produto;
-        
-        const oldPriceEl = clone.querySelector('.old-price');
-        if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
-            oldPriceEl.textContent = formatCurrency(item.preco_anterior);
-        } else {
-            oldPriceEl.style.display = 'none';
-        }
-        
-        clone.querySelector('.new-price').textContent = formatCurrency(item.preco_atual);
-        
-        carouselContainer.appendChild(clone);
     });
 }
+
+// ── BUILDERS DE CARD POR TIPO ─────────────────────────────────────────────────
+
+// Helper: cria a estrutura base de um card (imagem + info wrapper)
+function createCardBase(item, extraClass) {
+    const card = document.createElement('div');
+    card.className = 'product-card' + (extraClass ? ` ${extraClass}` : '');
+    applyTextSizing(card, item);
+
+    const validityParts = getValidityBadgeParts(item);
+    if (validityParts.length > 0) card.classList.add('has-schedule');
+
+    const isSemFoto = layoutMode === 'sem-foto' || layoutMode === 'sem-foto-destaque';
+
+    if (isSemFoto) {
+        // Badge decorativo no topo para modos sem foto
+        const badge = document.createElement('div');
+        badge.className = 'promo-badge';
+        const tipo = item.tipo_promo || 'preco_fixo';
+        if (tipo === 'leva_paga') {
+            badge.textContent = `LEVE ${item.qtd_leva || '?'} PAGUE ${item.qtd_paga || '?'}`;
+        } else if (tipo === 'desconto' && item.percentual_desconto != null) {
+            badge.textContent = `${item.percentual_desconto}% OFF`;
+        } else if (tipo === 'pack' && item.qtd_pack) {
+            badge.textContent = `${item.qtd_pack} por ${formatCurrency(item.preco_atual)}`;
+        } else {
+            badge.textContent = getValidityBadgeText(item) || 'OFERTA IMPERDÍVEL';
+        }
+        card.appendChild(badge);
+    } else {
+        // Seção de imagem normal
+        const imgWrapper = document.createElement('div');
+        imgWrapper.className = 'product-image-wrapper';
+        const imgEl = document.createElement('img');
+        imgEl.className = 'product-image';
+        imgEl.alt = 'Produto';
+        imgWrapper.appendChild(imgEl);
+        card.appendChild(imgWrapper);
+        setProductImage(imgEl, imgWrapper, item.link_imagem);
+    }
+
+    // Info wrapper
+    const info = document.createElement('div');
+    info.className = 'product-info';
+    card.appendChild(info);
+
+    // Badge de agenda (dias/horário) — inserido pelo builder após o nome
+    const validityBadgeEl = document.createElement('span');
+    validityBadgeEl.className = 'validity-badge';
+    validityBadgeEl.style.display = 'none';
+    renderValidityBadges(validityBadgeEl, item);
+
+    return { card, info, validityBadgeEl };
+}
+
+
+// Tipo: Preço Fixo (comportamento original)
+function buildCardPrecoFixo(item) {
+    // Usa o template HTML original para máxima compatibilidade
+    const clone = template.content.cloneNode(true);
+    const card = clone.querySelector('.product-card');
+    const imgWrapper = clone.querySelector('.product-image-wrapper');
+    const imgElement = clone.querySelector('.product-image');
+
+    const validityText = getValidityBadgeText(item);
+    const validityParts = getValidityBadgeParts(item);
+    applyTextSizing(card, item);
+    if (validityParts.length > 0) card.classList.add('has-schedule');
+
+    if (layoutMode === 'sem-foto' || layoutMode === 'sem-foto-destaque') {
+        if (imgWrapper) imgWrapper.remove();
+        const badge = document.createElement('div');
+        badge.className = 'promo-badge';
+        badge.textContent = validityText || 'OFERTA IMPERDÍVEL';
+        clone.querySelector('.product-card').prepend(badge);
+    } else {
+        setProductImage(imgElement, imgWrapper, item.link_imagem);
+        const validityBadgeEl = clone.querySelector('.validity-badge');
+        renderValidityBadges(validityBadgeEl, item);
+    }
+
+    clone.querySelector('.product-name').textContent = item.nome_produto;
+
+    const oldPriceEl = clone.querySelector('.old-price');
+    if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
+        oldPriceEl.textContent = formatCurrency(item.preco_anterior);
+    } else {
+        oldPriceEl.style.display = 'none';
+    }
+
+    clone.querySelector('.new-price').textContent = formatCurrency(item.preco_atual);
+
+    // Retorna o fragmento como elemento
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(clone);
+    return wrapper.firstElementChild;
+}
+
+// Tipo: Leva e Paga
+function buildCardLevaPaga(item) {
+    const { card, info, validityBadgeEl } = createCardBase(item, 'card-leva-paga');
+
+    const name = document.createElement('h2');
+    name.className = 'product-name';
+    name.textContent = item.nome_produto;
+    info.appendChild(name);
+    info.appendChild(validityBadgeEl); // badge de validade abaixo do nome
+
+    // Preço unitário (opcional)
+    if (item.preco_atual > 0) {
+        const priceRow = document.createElement('div');
+        priceRow.className = 'lp-price-row';
+        priceRow.innerHTML = `<span class="lp-unit-label">Preço unitário</span><span class="lp-unit-price">${formatCurrency(item.preco_atual)}</span>`;
+        info.appendChild(priceRow);
+    }
+
+    // Badge LEVE X → PAGUE Y
+    const badgeWrap = document.createElement('div');
+    badgeWrap.className = 'lp-badge-wrap';
+
+    const qtdLeva = item.qtd_leva || '?';
+    const qtdPaga = item.qtd_paga || '?';
+
+    badgeWrap.innerHTML = `
+        <span class="lp-block lp-leve">
+            <span class="lp-num">${qtdLeva}</span>
+            <span class="lp-label">LEVE</span>
+        </span>
+        <span class="lp-sep">→</span>
+        <span class="lp-block lp-pague">
+            <span class="lp-num">${qtdPaga}</span>
+            <span class="lp-label">PAGUE</span>
+        </span>
+    `;
+    info.appendChild(badgeWrap);
+
+    return card;
+}
+
+
+
+// Tipo: Desconto Percentual
+function buildCardDesconto(item) {
+    const { card, info, validityBadgeEl } = createCardBase(item, 'card-desconto');
+
+    const name = document.createElement('h2');
+    name.className = 'product-name';
+    name.textContent = item.nome_produto;
+    info.appendChild(name);
+    info.appendChild(validityBadgeEl);
+
+    // Condição de quantidade mínima (ex: "A partir de 3 unidades" ou "A cada 3 unidades")
+    if (item.qtd_minima && item.qtd_minima > 1) {
+        const cond = document.createElement('div');
+        cond.className = 'desc-qty-cond';
+        if (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') {
+            cond.textContent = `A cada ${item.qtd_minima} unidades`;
+        } else {
+            cond.textContent = `A partir de ${item.qtd_minima} unidades`;
+        }
+        info.appendChild(cond);
+    }
+
+    // Linha: badge de % + preços
+    const row = document.createElement('div');
+    row.className = 'desc-row';
+
+    const pct = item.percentual_desconto;
+    const badge = document.createElement('div');
+    badge.className = 'desc-pct-badge';
+    if (pct != null && !isNaN(pct)) {
+        badge.innerHTML = `<span class="desc-pct-num">${pct}%</span><span class="desc-pct-label">OFF</span>`;
+    } else {
+        badge.innerHTML = `<span class="desc-pct-label">DESCONTO</span>`;
+    }
+    row.appendChild(badge);
+
+    const prices = document.createElement('div');
+    prices.className = 'desc-prices';
+    if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
+        const old = document.createElement('span');
+        old.className = 'old-price';
+        old.textContent = formatCurrency(item.preco_anterior);
+        prices.appendChild(old);
+    }
+    const newP = document.createElement('span');
+    newP.className = 'new-price';
+    newP.textContent = formatCurrency(item.preco_atual);
+    prices.appendChild(newP);
+    row.appendChild(prices);
+
+    info.appendChild(row);
+    return card;
+}
+
+
+
+// Tipo: Pack (quantidade por preço)
+function buildCardPack(item) {
+    const { card, info, validityBadgeEl } = createCardBase(item, 'card-pack');
+
+    const name = document.createElement('h2');
+    name.className = 'product-name';
+    name.textContent = item.nome_produto;
+    info.appendChild(name);
+    info.appendChild(validityBadgeEl); // badge de validade abaixo do nome
+
+    const qtd = item.qtd_pack;
+    if (qtd && qtd > 1) {
+        const label = document.createElement('div');
+        label.className = 'pack-qty-label';
+        if (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') {
+            label.textContent = `A cada ${qtd} unidades por apenas`;
+        } else {
+            label.textContent = `A partir de ${qtd} unidades por apenas`;
+        }
+        info.appendChild(label);
+    }
+
+    const priceBadge = document.createElement('div');
+    priceBadge.className = 'pack-price-badge';
+    priceBadge.textContent = formatCurrency(item.preco_atual);
+    info.appendChild(priceBadge);
+
+    if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
+        const old = document.createElement('div');
+        old.className = 'pack-old-price';
+        old.textContent = `Antes: ${formatCurrency(item.preco_anterior)}`;
+        info.appendChild(old);
+    }
+
+    return card;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Renderiza o layout dividido (Vitrine)
 function renderVitrine(itemsToShow) {
@@ -779,13 +1030,50 @@ function renderVitrine(itemsToShow) {
         const listName = document.createElement('div');
         listName.className = 'list-name';
         listName.textContent = item.nome_produto;
+        listInfo.appendChild(listName);
+
+        const priceRow = document.createElement('div');
+        priceRow.className = 'list-price-row';
+        priceRow.style.display = 'flex';
+        priceRow.style.alignItems = 'center';
+        priceRow.style.gap = '8px';
+        priceRow.style.flexWrap = 'wrap';
 
         const listPrice = document.createElement('div');
         listPrice.className = 'list-price';
         listPrice.textContent = formatCurrency(item.preco_atual);
+        priceRow.appendChild(listPrice);
 
-        listInfo.appendChild(listName);
-        listInfo.appendChild(listPrice);
+        // Customizações e badges por tipo de promoção na lista lateral
+        const tipo = item.tipo_promo || 'preco_fixo';
+        if (tipo === 'leva_paga') {
+            const badge = document.createElement('span');
+            badge.className = 'vitrine-badge vitrine-badge-lp';
+            badge.textContent = `Leve ${item.qtd_leva || '?'} Pague ${item.qtd_paga || '?'}`;
+            priceRow.appendChild(badge);
+        } else if (tipo === 'desconto') {
+            if (item.percentual_desconto != null && !isNaN(item.percentual_desconto)) {
+                const badge = document.createElement('span');
+                badge.className = 'vitrine-badge vitrine-badge-desc';
+                badge.textContent = `${item.percentual_desconto}% OFF`;
+                priceRow.appendChild(badge);
+            }
+            if (item.qtd_minima && item.qtd_minima > 1) {
+                const qBadge = document.createElement('span');
+                qBadge.className = 'vitrine-badge vitrine-badge-qty';
+                const prefix = (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') ? 'Cada' : 'Mín.';
+                qBadge.textContent = `${prefix} ${item.qtd_minima} un.`;
+                priceRow.appendChild(qBadge);
+            }
+        } else if (tipo === 'pack') {
+            const badge = document.createElement('span');
+            badge.className = 'vitrine-badge vitrine-badge-pack';
+            const prefix = (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') ? 'Cada' : 'Pack';
+            badge.textContent = `${prefix} ${item.qtd_pack || '?'} un.`;
+            priceRow.appendChild(badge);
+        }
+
+        listInfo.appendChild(priceRow);
         listItem.appendChild(listInfo);
         sidebar.appendChild(listItem);
     });
@@ -799,8 +1087,12 @@ function updateVitrineHighlight(item, container) {
 
     container.innerHTML = '';
 
+    const tipo = item.tipo_promo || 'preco_fixo';
+
     const card = document.createElement('div');
-    card.className = 'product-card large-vitrine-card';
+    // Adiciona classe do tipo para herdar background/cores corretos
+    const typeClass = tipo !== 'preco_fixo' ? ` card-${tipo.replace(/_/g, '-')}` : '';
+    card.className = `product-card large-vitrine-card${typeClass}`;
     applyTextSizing(card, item);
 
     const imgWrapper = document.createElement('div');
@@ -823,22 +1115,103 @@ function updateVitrineHighlight(item, container) {
     if (getValidityBadgeParts(item).length > 0) card.classList.add('has-schedule');
     info.appendChild(validity);
 
-    const prices = document.createElement('div');
-    prices.className = 'prices';
+    if (tipo === 'leva_paga') {
+        // ── Leva e Paga na vitrine ──
+        if (item.preco_atual > 0) {
+            const pr = document.createElement('div');
+            pr.className = 'lp-price-row';
+            pr.innerHTML = `<span class="lp-unit-label">Preço unitário</span><span class="lp-unit-price">${formatCurrency(item.preco_atual)}</span>`;
+            info.appendChild(pr);
+        }
 
-    if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
-        const oldPrice = document.createElement('span');
-        oldPrice.className = 'old-price';
-        oldPrice.textContent = formatCurrency(item.preco_anterior);
-        prices.appendChild(oldPrice);
+        const qtdLeva = item.qtd_leva || '?';
+        const qtdPaga = item.qtd_paga || '?';
+        const bw = document.createElement('div');
+        bw.className = 'lp-badge-wrap';
+        bw.innerHTML = `
+            <span class="lp-block lp-leve"><span class="lp-num">${qtdLeva}</span><span class="lp-label">LEVE</span></span>
+            <span class="lp-sep">→</span>
+            <span class="lp-block lp-pague"><span class="lp-num">${qtdPaga}</span><span class="lp-label">PAGUE</span></span>
+        `;
+        info.appendChild(bw);
+
+    } else if (tipo === 'desconto') {
+        // ── Desconto na vitrine ──
+        if (item.qtd_minima && item.qtd_minima > 1) {
+            const cond = document.createElement('div');
+            cond.className = 'desc-qty-cond';
+            if (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') {
+                cond.textContent = `A cada ${item.qtd_minima} unidades`;
+            } else {
+                cond.textContent = `A partir de ${item.qtd_minima} unidades`;
+            }
+            info.appendChild(cond);
+        }
+        const row = document.createElement('div');
+        row.className = 'desc-row';
+        const pct = item.percentual_desconto;
+        const bdg = document.createElement('div');
+        bdg.className = 'desc-pct-badge';
+        bdg.innerHTML = pct != null && !isNaN(pct)
+            ? `<span class="desc-pct-num">${pct}%</span><span class="desc-pct-label">OFF</span>`
+            : `<span class="desc-pct-label">DESCONTO</span>`;
+        row.appendChild(bdg);
+        const prices = document.createElement('div');
+        prices.className = 'desc-prices';
+        if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
+            const old = document.createElement('span');
+            old.className = 'old-price';
+            old.textContent = formatCurrency(item.preco_anterior);
+            prices.appendChild(old);
+        }
+        const newP = document.createElement('span');
+        newP.className = 'new-price';
+        newP.textContent = formatCurrency(item.preco_atual);
+        prices.appendChild(newP);
+        row.appendChild(prices);
+        info.appendChild(row);
+
+    } else if (tipo === 'pack') {
+        // ── Pack na vitrine ──
+        const qtd = item.qtd_pack;
+        if (qtd && qtd > 1) {
+            const lbl = document.createElement('div');
+            lbl.className = 'pack-qty-label';
+            if (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') {
+                lbl.textContent = `A cada ${qtd} unidades por apenas`;
+            } else {
+                lbl.textContent = `A partir de ${qtd} unidades por apenas`;
+            }
+            info.appendChild(lbl);
+        }
+        const pb = document.createElement('div');
+        pb.className = 'pack-price-badge';
+        pb.textContent = formatCurrency(item.preco_atual);
+        info.appendChild(pb);
+        if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
+            const old = document.createElement('div');
+            old.className = 'pack-old-price';
+            old.textContent = `Antes: ${formatCurrency(item.preco_anterior)}`;
+            info.appendChild(old);
+        }
+
+    } else {
+        // ── Preço Fixo (padrão) na vitrine ──
+        const prices = document.createElement('div');
+        prices.className = 'prices';
+        if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
+            const oldPrice = document.createElement('span');
+            oldPrice.className = 'old-price';
+            oldPrice.textContent = formatCurrency(item.preco_anterior);
+            prices.appendChild(oldPrice);
+        }
+        const newPrice = document.createElement('span');
+        newPrice.className = 'new-price';
+        newPrice.textContent = formatCurrency(item.preco_atual);
+        prices.appendChild(newPrice);
+        info.appendChild(prices);
     }
 
-    const newPrice = document.createElement('span');
-    newPrice.className = 'new-price';
-    newPrice.textContent = formatCurrency(item.preco_atual);
-    prices.appendChild(newPrice);
-
-    info.appendChild(prices);
     card.appendChild(imgWrapper);
     card.appendChild(info);
     container.appendChild(card);

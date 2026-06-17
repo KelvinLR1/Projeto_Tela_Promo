@@ -844,3 +844,344 @@ body.page-exit {
         height: 80px;
     }
 }
+
+/* ── Layout Dividido de Customização de Cores ── */
+.fieldset-content {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.fieldset-controls {
+    flex: 1;
+    min-width: 280px;
+}
+
+.fieldset-preview {
+    flex: 0 0 280px;
+    width: 280px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@media (max-width: 900px) {
+    .fieldset-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .fieldset-preview {
+        width: 100%;
+        margin-top: 10px;
+    }
+}
+
+/* ── Miniaturas de Cards de Preview (Estilo Idêntico ao Principal, Reduzido) ── */
+.card-preview {
+    width: 280px;
+    height: 155px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    border: 3px solid transparent;
+    font-family: 'Poppins', sans-serif;
+    box-sizing: border-box;
+}
+
+.product-image-wrapper-preview {
+    flex: 0 0 40%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: transparent;
+    border-radius: 8px;
+    padding: 4px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 5px rgba(0,0,0,0.05);
+}
+
+.preview-img-placeholder {
+    font-size: 2.2rem;
+}
+
+.product-info-preview {
+    flex: 1;
+    min-width: 0;
+    padding-left: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
+
+.product-name-preview {
+    font-size: 0.8rem;
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.prices-preview {
+    display: flex;
+    flex-direction: column;
+}
+
+.old-price-preview {
+    color: #757575;
+    font-size: 0.68rem;
+    text-decoration: line-through;
+    font-weight: 600;
+    margin-bottom: -1px;
+}
+
+.new-price-preview {
+    font-size: 1.5rem;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Estilos de Cores Customizadas usando Variáveis CSS */
+
+/* Card Padrão */
+#previewCardPadrao {
+    background: linear-gradient(145deg, var(--card-padrao-bg-start, #ffffff), var(--card-padrao-bg-end, #f0f0f0));
+    border-color: var(--card-padrao-border, #fbc02d);
+}
+#previewCardPadrao .product-name-preview {
+    color: var(--card-padrao-text-name, #333333);
+}
+#previewCardPadrao .new-price-preview {
+    color: var(--card-padrao-text-price, #d32f2f);
+}
+
+/* Card Leva e Pague */
+#previewCardLeva {
+    background: linear-gradient(135deg, var(--card-leva-bg-start, #0f2027), var(--card-leva-bg-end, #2c5364));
+    border-color: var(--card-leva-border, #fbc02d);
+}
+#previewCardLeva .product-name-preview {
+    color: var(--card-leva-text-name, #ffffff);
+}
+.lp-badge-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+.lp-block {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+.lp-leve {
+    background: var(--card-leve-bg, #7a5c00);
+    border: 1px solid rgba(251, 192, 45, 0.4);
+}
+.lp-pague {
+    background: var(--card-pague-bg, #7a1020);
+    border: 1px solid rgba(220, 53, 69, 0.4);
+}
+.lp-num {
+    font-size: 0.9rem;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+}
+.lp-label {
+    font-size: 0.5rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.85);
+    text-transform: uppercase;
+}
+.lp-sep {
+    font-size: 0.8rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.65);
+}
+.lp-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+.lp-unit-label {
+    font-size: 0.58rem;
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 600;
+}
+.lp-unit-price {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--card-leva-unit-price, #fbc02d);
+}
+
+/* Card Desconto */
+#previewCardDesc {
+    background: linear-gradient(135deg, var(--card-desc-bg-start, #ffffff), var(--card-desc-bg-end, #ffffff));
+    border-color: var(--card-desc-border, #d32f2f);
+}
+#previewCardDesc .product-name-preview {
+    color: var(--card-desc-text-name, #1a1a1a);
+}
+.desc-qty-cond-preview {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: #333;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    padding: 1px 4px;
+    background: rgba(211, 47, 47, 0.1);
+    border-left: 2px solid var(--card-desc-border, #d32f2f);
+    border-radius: 0 2px 2px 0;
+    align-self: flex-start;
+}
+.desc-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.desc-pct-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-desc-badge-bg, #d32f2f);
+    border-radius: 6px;
+    padding: 2px 4px;
+    min-width: 30px;
+}
+.desc-pct-num {
+    font-size: 0.9rem;
+    font-weight: 900;
+    color: var(--card-desc-badge-text, #fff);
+    line-height: 1;
+}
+.desc-pct-label {
+    font-size: 0.45rem;
+    font-weight: 800;
+    color: var(--card-desc-badge-text, rgba(255, 255, 255, 0.9));
+    text-transform: uppercase;
+}
+#previewCardDesc .new-price-preview {
+    color: var(--card-desc-new-price, #d32f2f);
+}
+
+/* Card Pack */
+#previewCardPack {
+    background: linear-gradient(135deg, var(--card-pack-bg-start, #0d1b2a), var(--card-pack-bg-end, #1b263b));
+    border-color: var(--card-pack-border, #fbc02d);
+}
+#previewCardPack .product-name-preview {
+    color: var(--card-pack-text-name, #ffffff);
+}
+.pack-qty-label {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+.pack-price-badge {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--card-pack-price, #fbc02d);
+    line-height: 1;
+}
+.pack-old-price {
+    font-size: 0.58rem;
+    color: rgba(255, 255, 255, 0.55);
+    text-decoration: line-through;
+    margin-top: 2px;
+}
+
+/* ── Miniatura da Tela de Exibição (Preview Geral) ── */
+.screen-preview {
+    width: 280px;
+    height: 155px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    background: radial-gradient(circle at center, var(--promo-bg-center, #222) 0%, var(--promo-background, #111) 100%);
+    font-family: 'Poppins', sans-serif;
+    box-sizing: border-box;
+}
+
+.screen-header-preview {
+    height: 32px;
+    background: linear-gradient(90deg, var(--promo-primary, #d32f2f), var(--promo-header-mid, #f44336), var(--promo-primary, #d32f2f));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.screen-title-preview {
+    font-size: 0.52rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 70%;
+}
+
+.screen-logo-preview {
+    font-size: 0.75rem;
+}
+
+.screen-body-preview {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    padding: 8px 10px;
+}
+
+.screen-card-placeholder {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.screen-footer-preview {
+    height: 20px;
+    background-color: var(--promo-footer-bg, #111);
+    border-top: 2px solid var(--promo-accent, #fbc02d);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.screen-footer-text-preview {
+    font-size: 0.38rem;
+    font-weight: 700;
+    color: var(--promo-accent, #fbc02d);
+    text-transform: uppercase;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 90%;
+}
+
