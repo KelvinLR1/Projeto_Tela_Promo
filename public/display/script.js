@@ -805,26 +805,43 @@ function createCardBase(item, extraClass) {
     if (validityParts.length > 0) card.classList.add('has-schedule');
 
     const isSemFoto = layoutMode === 'sem-foto' || layoutMode === 'sem-foto-destaque';
+    const validityText = getValidityBadgeText(item);
 
     if (isSemFoto) {
         // Badge decorativo no topo para modos sem foto
-        const badge = document.createElement('div');
-        badge.className = 'promo-badge';
         const tipo = item.tipo_promo || 'preco_fixo';
-        if (tipo === 'leva_paga') {
-            badge.textContent = `LEVE ${item.qtd_leva || '?'} PAGUE ${item.qtd_paga || '?'}`;
-        } else if (tipo === 'desconto' && item.percentual_desconto != null) {
-            badge.textContent = `${item.percentual_desconto}% OFF`;
-        } else if (tipo === 'pack' && item.qtd_pack) {
-            badge.textContent = `${item.qtd_pack} unidades por ${formatCurrency(item.preco_atual)}`;
-        } else if (tipo === 'unitario' && (item.qtd_minima || item.qtd_pack)) {
-            const qty = item.qtd_minima || item.qtd_pack;
-            const condText = (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') ? 'A cada' : 'A partir de';
-            badge.textContent = `${condText} ${qty} un. por ${formatCurrency(item.preco_atual)} cada`;
+        
+        let showBadge = false;
+        let badgeText = '';
+
+        if (validityText) {
+            showBadge = true;
+            badgeText = validityText;
         } else {
-            badge.textContent = getValidityBadgeText(item) || 'OFERTA IMPERDÍVEL';
+            if (tipo === 'preco_fixo') {
+                showBadge = true;
+                badgeText = 'OFERTA IMPERDÍVEL';
+            } else if (tipo === 'desconto' && item.percentual_desconto != null) {
+                showBadge = true;
+                badgeText = `${item.percentual_desconto}% OFF`;
+            } else if (tipo === 'leva_paga') {
+                showBadge = true;
+                badgeText = `LEVE ${item.qtd_leva || '?'} PAGUE ${item.qtd_paga || '?'}`;
+            } else if (tipo === 'unitario' || tipo === 'pack') {
+                showBadge = true;
+                badgeText = 'ATACADO';
+            } else {
+                showBadge = true;
+                badgeText = 'OFERTA';
+            }
         }
-        card.appendChild(badge);
+
+        if (showBadge) {
+            const badge = document.createElement('div');
+            badge.className = 'promo-badge';
+            badge.textContent = badgeText;
+            card.appendChild(badge);
+        }
     } else {
         // Seção de imagem normal
         const imgWrapper = document.createElement('div');
@@ -846,7 +863,12 @@ function createCardBase(item, extraClass) {
     const validityBadgeEl = document.createElement('span');
     validityBadgeEl.className = 'validity-badge';
     validityBadgeEl.style.display = 'none';
-    renderValidityBadges(validityBadgeEl, item);
+    
+    // Se for modo sem foto e já estivermos exibindo a validade no badge superior (topo),
+    // ocultamos o badge de validade interno para não repetir a mesma informação.
+    if (!isSemFoto || !validityText) {
+        renderValidityBadges(validityBadgeEl, item);
+    }
 
     return { card, info, validityBadgeEl };
 }
