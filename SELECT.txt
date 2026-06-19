@@ -1,43 +1,9 @@
-SELECT
-    p.nome AS nome_produto,
-    CASE
-        WHEN pp.preco_promocional_varejo <> 0 THEN pp.preco_promocional_varejo
-        WHEN pp.preco_promocional_atacado <> 0 THEN pp.preco_promocional_atacado
-        WHEN pp.percentual_promocional_varejo <> 0 THEN p.preco_venda - (p.preco_venda * (pp.percentual_promocional_varejo / 100))
-        WHEN pp.percentual_promocional_atacado <> 0 THEN p.preco_venda_atacado - (p.preco_venda_atacado * (pp.percentual_promocional_atacado / 100))
-        ELSE p.preco_venda
-    END AS preco_atual,
-    pp.id_produto AS id,
-    p.preco_venda AS preco_anterior,
-    prodi.caminho_imagem AS link_imagem,
-    null as data_validade,
-    promo.data_inicial as data_inicio,
-    promo.data_final as data_fim,
-    CASE 
-        -- Se TODOS os dias forem igual a 1, retorna vazio ''
-        WHEN aplicar_domingo = 1 AND aplicar_segunda = 1 AND aplicar_terca = 1 
-         AND aplicar_quarta = 1  AND aplicar_quinta = 1  AND aplicar_sexta = 1 
-         AND aplicar_sabado = 1 THEN ''
-        
-        -- Caso contrário, traz a lista separada por vírgula normalmente
-        ELSE CONCAT_WS(',',
-            CASE WHEN aplicar_domingo = 1 THEN '0' END,
-            CASE WHEN aplicar_segunda = 1 THEN '1' END,
-            CASE WHEN aplicar_terca   = 1 THEN '2' END,
-            CASE WHEN aplicar_quarta  = 1 THEN '3' END,
-            CASE WHEN aplicar_quinta  = 1 THEN '4' END,
-            CASE WHEN aplicar_sexta   = 1 THEN '5' END,
-            CASE WHEN aplicar_sabado  = 1 THEN '6' END
-        )
-    END AS dias_semana,
-    promo.hora_inicio as hora_inicio,
-    promo.hora_fim as hora_fim,
-    null AS texto_validade
-FROM 
-    promocao_produto pp
-    LEFT JOIN produto p ON p.id_produto = pp.id_produto
-    LEFT JOIN promocao promo on promo.id_promocao = pp.id_promocao
-    LEFT JOIN (
+-- 1. Isolando a imagem principal para processar APENAS UMA VEZ
+WITH ImagemPrincipal AS (
+    SELECT 
+        id_produto,
+        caminho_imagem
+    FROM (
         SELECT 
             id_produto,
             caminho_imagem,
@@ -46,10 +12,252 @@ FROM
                 ORDER BY imagem_principal DESC
             ) AS rn
         FROM produto_imagem
-    ) prodi ON prodi.id_produto = p.id_produto AND prodi.rn = 1
-WHERE
-	promo.ativo = 1
+    ) t
+    WHERE t.rn = 1
+),
 
+-- 2. CTE para centralizar promoções ativas e evitar repetição de lógica de exclusão
+PromocoesAtivas AS (
+    SELECT pp.id_produto
+    FROM promocao_produto pp
+    INNER JOIN promocao promo ON promo.id_promocao = pp.id_promocao
+    WHERE promo.ativo = 1 
+      AND CAST(GETDATE() AS DATE) BETWEEN promo.data_inicial AND promo.data_final
+),
+
+PacotesAtivos AS (
+    SELECT ppdi.id_produto 
+    FROM promocao_pacote_detalhe_item ppdi
+    INNER JOIN promocao_pacote_detalhe ppd ON ppd.id_promocao_pacote_detalhe = ppdi.id_promocao_pacote_detalhe
+    INNER JOIN promocao_pacote pp ON pp.id_promocao_pacote = ppd.id_promocao_pacote
+    INNER JOIN promocao promo ON promo.id_promocao = pp.id_promocao
+    WHERE promo.ativo = 1 
+      AND CAST(GETDATE() AS DATE) BETWEEN promo.data_inicial AND promo.data_final
+)
+
+-- padrão varejo
+SELECT
+    p.nome AS nome_produto,
+    CASE
+        WHEN pp.preco_promocional_varejo <> 0 THEN pp.preco_promocional_varejo
+        WHEN pp.percentual_promocional_varejo <> 0 THEN p.preco_venda - (p.preco_venda * (pp.percentual_promocional_varejo / 100))
+        ELSE NULL
+    END AS preco_atual,
+    pp.id_produto AS id,
+    p.preco_venda AS preco_anterior,
+    prodi.caminho_imagem AS link_imagem,
+    CAST(NULL AS DATETIME) as data_validade,
+    promo.data_inicial as data_inicio,
+    promo.data_final as data_fim,
+    CASE 
+        WHEN promo.aplicar_domingo = 1 AND promo.aplicar_segunda = 1 AND promo.aplicar_terca = 1 
+             AND promo.aplicar_quarta = 1 AND promo.aplicar_quinta = 1 AND promo.aplicar_sexta = 1 
+             AND promo.aplicar_sabado = 1 THEN ''
+        ELSE CONCAT_WS(',',
+            CASE WHEN promo.aplicar_domingo = 1 THEN '0' END,
+            CASE WHEN promo.aplicar_segunda = 1 THEN '1' END,
+            CASE WHEN promo.aplicar_terca   = 1 THEN '2' END,
+            CASE WHEN promo.aplicar_quarta  = 1 THEN '3' END,
+            CASE WHEN promo.aplicar_quinta  = 1 THEN '4' END,
+            CASE WHEN promo.aplicar_sexta   = 1 THEN '5' END,
+            CASE WHEN promo.aplicar_sabado  = 1 THEN '6' END
+        )
+    END AS dias_semana,
+    promo.hora_inicio as hora_inicio,
+    promo.hora_fim as hora_fim,
+    CAST(NULL AS VARCHAR(MAX)) AS texto_validade,
+    CASE
+        WHEN pp.preco_promocional_varejo <> 0 THEN CAST('preco_fixo' AS VARCHAR(50))
+        WHEN pp.percentual_promocional_varejo <> 0 THEN CAST('desconto' AS VARCHAR(50))
+        ELSE NULL
+    END AS tipo_promo,    
+    CAST(NULL AS INT) AS qtd_leva,                  
+    CAST(NULL AS INT) AS qtd_paga,                  
+    CAST(NULL AS NUMERIC(10,2)) AS percentual_desconto, 
+    CAST(NULL AS INT) AS qtd_minima,    
+    CAST(NULL AS INT) AS qtd_pack, 
+    CAST('' AS VARCHAR(50)) AS condicao_qty 
+FROM 
+    promocao_produto pp
+    LEFT JOIN produto p ON p.id_produto = pp.id_produto
+    LEFT JOIN promocao promo on promo.id_promocao = pp.id_promocao
+    LEFT JOIN ImagemPrincipal prodi ON prodi.id_produto = p.id_produto
+WHERE
+    promo.ativo = 1 and promo.tipo < 2
+    AND CAST(GETDATE() AS DATE) BETWEEN promo.data_inicial AND promo.data_final
+    AND (pp.preco_promocional_varejo <> 0 OR pp.percentual_promocional_varejo <> 0)
+    
+UNION ALL
+
+-- padrão atacado
+SELECT
+    p.nome AS nome_produto,
+    CASE
+        WHEN pp.preco_promocional_atacado <> 0 THEN pp.preco_promocional_atacado
+        WHEN pp.percentual_promocional_atacado <> 0 THEN p.preco_venda_atacado - (p.preco_venda_atacado * (pp.percentual_promocional_atacado / 100))
+        ELSE NULL
+    END AS preco_atual,
+    pp.id_produto AS id,
+    p.preco_venda_atacado AS preco_anterior,
+    prodi.caminho_imagem AS link_imagem,
+    CAST(NULL AS DATETIME) as data_validade,
+    promo.data_inicial as data_inicio,
+    promo.data_final as data_fim,
+    CASE 
+        WHEN promo.aplicar_domingo = 1 AND promo.aplicar_segunda = 1 AND promo.aplicar_terca = 1 
+             AND promo.aplicar_quarta = 1 AND promo.aplicar_quinta = 1 AND promo.aplicar_sexta = 1 
+             AND promo.aplicar_sabado = 1 THEN ''
+        ELSE CONCAT_WS(',',
+            CASE WHEN promo.aplicar_domingo = 1 THEN '0' END,
+            CASE WHEN promo.aplicar_segunda = 1 THEN '1' END,
+            CASE WHEN promo.aplicar_terca   = 1 THEN '2' END,
+            CASE WHEN promo.aplicar_quarta  = 1 THEN '3' END,
+            CASE WHEN promo.aplicar_quinta  = 1 THEN '4' END,
+            CASE WHEN promo.aplicar_sexta   = 1 THEN '5' END,
+            CASE WHEN promo.aplicar_sabado  = 1 THEN '6' END
+        )
+    END AS dias_semana,
+    promo.hora_inicio as hora_inicio,
+    promo.hora_fim as hora_fim,
+    CAST(NULL AS VARCHAR(MAX)) AS texto_validade,
+    CAST('preco_fixo' AS VARCHAR(50)) AS tipo_promo,    
+    CAST(NULL AS INT) AS qtd_leva,                  
+    CAST(NULL AS INT) AS qtd_paga,                  
+    CAST(NULL AS NUMERIC(10,2)) AS percentual_desconto, 
+    CAST(NULL AS INT) AS qtd_minima,    
+    p.quantidade_preco_atacado AS qtd_pack, 
+    CASE
+        WHEN p.tipo_aplicacao_atacarejo = 1 AND (pp.preco_promocional_atacado <> 0 OR pp.percentual_promocional_atacado <> 0) THEN 'a_partir'
+        WHEN p.tipo_aplicacao_atacarejo = 2 AND (pp.preco_promocional_atacado <> 0 OR pp.percentual_promocional_atacado <> 0) THEN 'a_cada'
+        ELSE ''
+    END AS condicao_qty       
+FROM 
+    promocao_produto pp
+    LEFT JOIN produto p ON p.id_produto = pp.id_produto
+    LEFT JOIN promocao promo on promo.id_promocao = pp.id_promocao
+    LEFT JOIN ImagemPrincipal prodi ON prodi.id_produto = p.id_produto
+WHERE
+    promo.ativo = 1 and promo.tipo < 2
+    AND CAST(GETDATE() AS DATE) BETWEEN promo.data_inicial AND promo.data_final
+    AND (p.tipo_aplicacao_atacarejo IS NOT NULL AND (pp.preco_promocional_atacado <> 0 OR pp.percentual_promocional_atacado <> 0))
+
+UNION ALL
+
+-- cond e benef
+SELECT
+    p.nome AS nome_produto,
+    CASE
+       WHEN promo.tipo > 1 AND promo.tipo_condicoes = 1 THEN p.preco_venda
+       WHEN promo.tipo > 1 AND promo.tipo_condicoes = 5 THEN p.preco_venda - (p.preco_venda * (pp.desconto/100))
+       WHEN promo.tipo > 1 AND promo.tipo_condicoes = 4 THEN pp.preco_item
+       ELSE p.preco_venda
+    END AS preco_atual,
+    p.id_produto AS id,
+    CASE
+       WHEN promo.tipo > 1 AND promo.tipo_condicoes = 1 THEN NULL
+       WHEN promo.tipo > 1 AND promo.tipo_condicoes = 5 THEN p.preco_venda
+       WHEN promo.tipo > 1 AND promo.tipo_condicoes = 4 THEN p.preco_venda * ppd.quantidade
+       ELSE NULL
+    END AS preco_anterior,
+    prodi.caminho_imagem AS link_imagem,
+    CAST(NULL AS DATETIME) as data_validade,
+    promo.data_inicial as data_inicio,
+    promo.data_final as data_fim,
+    CASE 
+        WHEN promo.aplicar_domingo = 1 AND promo.aplicar_segunda = 1 AND promo.aplicar_terca = 1 
+             AND promo.aplicar_quarta = 1 AND promo.aplicar_quinta = 1 AND promo.aplicar_sexta = 1 
+             AND promo.aplicar_sabado = 1 THEN ''
+        ELSE CONCAT_WS(',',
+            CASE WHEN promo.aplicar_domingo = 1 THEN '0' END,
+            CASE WHEN promo.aplicar_segunda = 1 THEN '1' END,
+            CASE WHEN promo.aplicar_terca   = 1 THEN '2' END,
+            CASE WHEN promo.aplicar_quarta  = 1 THEN '3' END,
+            CASE WHEN promo.aplicar_quinta  = 1 THEN '4' END,
+            CASE WHEN promo.aplicar_sexta   = 1 THEN '5' END,
+            CASE WHEN promo.aplicar_sabado  = 1 THEN '6' END
+        )
+    END AS dias_semana,
+    promo.hora_inicio as hora_inicio,
+    promo.hora_fim as hora_fim,
+    null AS texto_validade,
+    CASE
+        WHEN promo.tipo > 1 AND promo.tipo_condicoes = 1 THEN 'leva_paga'
+        WHEN promo.tipo > 1 AND promo.tipo_condicoes = 5 THEN 'desconto'
+        WHEN promo.tipo > 1 AND promo.tipo_condicoes = 4 THEN 'pack'
+        ELSE ''
+    END AS tipo_promo,
+    CASE
+        WHEN promo.tipo > 1 AND promo.tipo_condicoes = 1 THEN ppd.quantidade
+        ELSE NULL
+    END AS qtd_leva,
+    CASE
+        WHEN promo.tipo > 1 AND promo.tipo_condicoes = 1 THEN pp.quantidade_pagar
+        ELSE NULL
+    END AS qtd_paga,
+    CASE
+        WHEN promo.tipo > 1 AND promo.tipo_condicoes = 5 THEN pp.desconto
+        ELSE NULL
+    END AS percentual_desconto,
+    CASE
+        WHEN promo.tipo > 1 AND promo.tipo_condicoes = 5 THEN ppd.quantidade
+        ELSE NULL
+    END AS qtd_minima,
+    CASE
+        WHEN promo.tipo > 1 AND promo.tipo_condicoes = 4 THEN ppd.quantidade
+        ELSE NULL
+    END AS qtd_pack,
+	CASE
+        WHEN promo.tipo > 1 AND promo.tipo_condicoes = 4 THEN CAST('a_cada' AS VARCHAR(50))
+        ELSE ''
+    END AS condicao_qty
+FROM 
+    promocao_pacote_detalhe_item ppdi
+    LEFT JOIN promocao_pacote_detalhe ppd ON ppd.id_promocao_pacote_detalhe = ppdi.id_promocao_pacote_detalhe
+    LEFT JOIN promocao_pacote pp ON pp.id_promocao_pacote = ppd.id_promocao_pacote
+    LEFT JOIN promocao promo ON promo.id_promocao = pp.id_promocao
+    LEFT JOIN produto p ON p.id_produto = ppdi.id_produto
+    LEFT JOIN ImagemPrincipal prodi ON prodi.id_produto = p.id_produto
+WHERE
+    promo.ativo = 1 and promo.tipo > 1
+    AND CAST(GETDATE() AS DATE) BETWEEN promo.data_inicial AND promo.data_final
+
+UNION ALL
+
+-- atacado fora da promoção (Otimizado com NOT EXISTS)
+SELECT
+    p.nome AS nome_produto,
+    p.preco_venda_atacado AS preco_atual,
+    p.id_produto AS id,
+    p.preco_venda AS preco_anterior,
+    prodi.caminho_imagem AS link_imagem,
+    CAST(NULL AS DATETIME) as data_validade,
+    CAST(NULL AS DATETIME) as data_inicio,
+    CAST(NULL AS DATETIME) as data_fim,
+    NULL AS dias_semana,
+    NULL as hora_inicio,
+    NULL as hora_fim,
+    CAST(NULL AS VARCHAR(MAX)) AS texto_validade,
+    CAST('unitario' AS VARCHAR(50)) as tipo_promo,        
+    CAST(NULL AS INT) AS qtd_leva,                  
+    CAST(NULL AS INT) AS qtd_paga,                  
+    CAST(NULL AS NUMERIC(10,2)) AS percentual_desconto, 
+    CAST(NULL AS INT) AS qtd_minima,                
+    p.quantidade_preco_atacado AS qtd_pack,                 
+    CASE
+        WHEN p.tipo_aplicacao_atacarejo = 1 THEN 'a_partir'
+        WHEN p.tipo_aplicacao_atacarejo = 2 THEN 'a_cada'
+        ELSE ''
+    END AS condicao_qty       
+FROM 
+    produto p
+    LEFT JOIN ImagemPrincipal prodi ON prodi.id_produto = p.id_produto
+WHERE
+    p.quantidade_preco_atacado > 0 
+    AND p.tipo_aplicacao_atacarejo IS NOT NULL
+    -- Substituído NOT IN por NOT EXISTS usando as CTEs de controle
+    AND NOT EXISTS (SELECT 1 FROM PromocoesAtivas pa WHERE pa.id_produto = p.id_produto)
+    AND NOT EXISTS (SELECT 1 FROM PacotesAtivos pca WHERE pca.id_produto = p.id_produto);
+	
     /*
     0 = Domingo
     1 = Segunda-feira
@@ -68,14 +276,15 @@ WHERE
     Adicione o campo tipo_promo ao SELECT conforme o tipo de cada promoção.
     Se omitido ou NULL, usa o layout padrão (preco_fixo).
 
-    ┌──────────────┬────────────────────────────────────────────────┐
-    │ tipo_promo   │ Descrição                                      │
-    ├──────────────┼────────────────────────────────────────────────┤
-    │ preco_fixo   │ Preço promocional simples (layout atual)       │
-    │ leva_paga    │ Leve X Pague Y (ex: Leve 3, Pague 2)          │
-    │ desconto     │ Desconto percentual (ex: 10% OFF)              │
-    │ pack         │ Quantidade por preço fixo (ex: 3 por R$30)    │
-    └──────────────┴────────────────────────────────────────────────┘
+    ┌──────────────┬─────────────────────────────────────────────────────────┐
+    │ tipo_promo   │ Descrição                                               │
+    ├──────────────┼─────────────────────────────────────────────────────────┤
+    │ preco_fixo   │ Preço promocional simples (layout atual)                │
+    │ leva_paga    │ Leve X Pague Y (ex: Leve 3, Pague 2)                    │
+    │ desconto     │ Desconto percentual (ex: 10% OFF)                       │
+    │ pack         │ Pacote fechado (ex: 3 unidades por R$30)                 │
+    │ unitario     │ Preço unitário por qtd (ex: compre 3, cada sai por R$10)│
+    └──────────────┴─────────────────────────────────────────────────────────┘
 
     CAMPOS AUXILIARES POR TIPO:
 
@@ -94,11 +303,19 @@ WHERE
       preco_atual         → preço com desconto
 
     pack:
-      qtd_pack   → quantidade de itens no pack  (ex: 3)
-      condicao_qty        → modo da quantidade: 'a_partir' ou 'a_cada'.
-                            se omitido, o padrão é 'a_partir' (exibe "A partir de X unidades por apenas").
-      preco_atual → preço total do pack          (ex: 30.00)
-      preco_anterior → preço original (opcional, exibido riscado)
+      qtd_pack       → quantidade de itens no pacote fechado  (ex: 3)
+                       exibe: "3 unidades por" + preço
+      preco_atual    → preço total do pacote  (ex: 30.00)
+      preco_anterior → preço normal unitário × qtd (opcional, exibido riscado)
+      NOTA: não utiliza condicao_qty — pack é sempre um pacote fixo.
+
+    unitario:
+      qtd_minima   → quantidade mínima/gatilho  (ex: 3). Também aceita qtd_pack.
+      condicao_qty → modo da quantidade: 'a_partir' ou 'a_cada'.
+                     se omitido, o padrão é 'a_partir' (exibe "A partir de X unidades").
+                     se 'a_cada', exibe "Comprando X unidades".
+      preco_atual    → preço unitário promocional (ex: 10.00)
+      preco_anterior → preço unitário normal (para exibir riscado, opcional)
 
     preco_fixo:
       preco_anterior → preço original (para exibir riscado)
@@ -116,12 +333,44 @@ WHERE
     'desconto'   AS tipo_promo,
     10           AS percentual_desconto,
 
-    -- Pack por preço:
+    -- Pacote fechado (ex: 3 unidades por R$30):
     'pack'       AS tipo_promo,
     3            AS qtd_pack,
+    -- condicao_qty NÃO é utilizado para pack
+
+    -- Preço unitário por quantidade (novo):
+    'unitario'   AS tipo_promo,
+    3            AS qtd_minima,
 
     -- Preço fixo (padrão):
     'preco_fixo' AS tipo_promo,
     -- ou simplesmente: NULL AS tipo_promo
+
+    ═══════════════════════════════════════════════════════════════
+     HIERARQUIA E PRIORIDADE DE EXIBIÇÃO DE VALIDADE / BADGES
+    ═══════════════════════════════════════════════════════════════
+    Quando múltiplos campos de validade são preenchidos, o sistema
+    segue as seguintes regras de prioridade de cima para baixo:
+
+    1. texto_validade (Prioridade Máxima):
+       Se retornado com algum texto (ex: 'SÓ HOJE', 'FIM DE SEMANA'),
+       exibe exatamente esse texto e ignora todas as outras datas.
+
+    2. Alerta de Último Dia (data_fim / data_validade):
+       Se a data final coincidir exatamente com o dia de hoje, o
+       sistema exibe automaticamente 'ÚLTIMO DIA!' em destaque.
+
+    3. Agendamento Operacional (dias_semana, hora_inicio, hora_fim):
+       Exibe as restrições operacionais ativas para a oferta:
+       - dias_semana: exibe ex: 'DIAS: SEG, QUA, SEX'
+       - hora_inicio / hora_fim: exibe ex: 'HORÁRIO: 08:00 - 12:00'
+
+    4. Contagem Regressiva Simples (data_validade):
+       Calcula o tempo restante com base na data atual:
+       - Hoje: 'SÓ HOJE'
+       - Amanhã: 'ATÉ AMANHÃ'
+       - Até 7 dias: 'ATÉ <DIA_DA_SEMANA>' (ex: 'ATÉ SÁBADO')
+       - Mais de 7 dias: 'ATÉ DD/MM'
     ═══════════════════════════════════════════════════════════════
     */
+

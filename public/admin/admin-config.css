@@ -359,7 +359,8 @@ input[type="color"] {
 .toast {
     position: fixed;
     right: 24px;
-    bottom: 24px;
+    top: 24px;
+    z-index: 99999;
     max-width: min(460px, calc(100vw - 32px));
     padding: 14px 18px;
     border-left: 5px solid var(--info);
@@ -369,7 +370,7 @@ input[type="color"] {
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
     opacity: 0;
     pointer-events: none;
-    transform: translateY(18px);
+    transform: translateY(-18px);
     transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
@@ -474,6 +475,41 @@ input[type="color"] {
     color: var(--muted);
     border: 1px solid rgba(154, 167, 181, 0.2);
 }
+
+/* Tags de tipo de promoção na tabela de campos */
+.tipo-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 5px;
+}
+
+.tipo-tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 0.60rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.tipo-tag-todos  { background: rgba(154,167,181,0.12); color: #9aa7b5; border: 1px solid rgba(154,167,181,0.25); }
+.tipo-tag-fixo   { background: rgba(100,200,120,0.12); color: #6dba7f; border: 1px solid rgba(100,200,120,0.3); }
+.tipo-tag-leva   { background: rgba(74,163,255,0.12);  color: #5aaeff; border: 1px solid rgba(74,163,255,0.3); }
+.tipo-tag-desc   { background: rgba(246,110,60,0.12);  color: #f47a50; border: 1px solid rgba(246,110,60,0.3); }
+.tipo-tag-pack   { background: rgba(246,201,69,0.12);  color: #c8a220; border: 1px solid rgba(246,201,69,0.3); }
+.tipo-tag-unit   { background: rgba(180,100,255,0.12); color: #b46fff; border: 1px solid rgba(180,100,255,0.3); }
+
+.col-ref td > small {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    opacity: 0.85;
+}
+
 
 .local-images-info {
     display: flex;
@@ -785,18 +821,18 @@ input[type="color"] {
 }
 
 /* Transições de página fluidas */
-body {
+.admin-shell {
     opacity: 0;
     transform: translateY(8px);
     transition: opacity 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-body.page-loaded {
+body.page-loaded .admin-shell {
     opacity: 1;
     transform: translateY(0);
 }
 
-body.page-exit {
+body.page-exit .admin-shell {
     opacity: 0;
     transform: translateY(-8px);
 }
@@ -1105,6 +1141,28 @@ body.page-exit {
     color: rgba(255, 255, 255, 0.55);
     text-decoration: line-through;
     margin-top: 2px;
+}
+
+/* Card Unitário */
+#previewCardUnitario {
+    background: linear-gradient(135deg, var(--card-unitario-bg-start, #1e1b4b), var(--card-unitario-bg-end, #311042));
+    border-color: var(--card-unitario-border, #fbc02d);
+}
+#previewCardUnitario .product-name-preview {
+    color: var(--card-unitario-text-name, #ffffff);
+}
+.unitario-qty-label-preview {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+.unitario-price-badge-preview {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--card-unitario-price, #fbc02d);
+    line-height: 1;
 }
 
 /* ── Miniatura da Tela de Exibição (Preview Geral) ── */

@@ -473,6 +473,201 @@ body {
     border-color: rgba(251, 192, 45, 0.4);
 }
 
+    margin-bottom: -0.5vh;
+}
+
+.new-price {
+    color: var(--card-padrao-text-price, var(--promo-primary, #d32f2f));
+    font-size: 7.5vh;
+    font-weight: 900;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    line-height: 1;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.has-long-name .product-name {
+    font-size: 3.3vh;
+    line-height: 1.12;
+}
+
+.has-very-long-name .product-name {
+    font-size: 2.8vh;
+    -webkit-line-clamp: 3;
+}
+
+.has-long-price .new-price {
+    font-size: 6.2vh;
+}
+
+/* Caso seja apenas 1, 2 ou 3 produtos na tela (layout padrao), eles ficam maiores */
+.large-card {
+    width: 60vw;
+    height: 60vh;
+}
+.large-card .product-name { font-size: 6vh; }
+.large-card.has-schedule .product-name { font-size: 5vh; margin-bottom: 1.5vh; }
+.large-card .old-price { font-size: 4vh; }
+.large-card .new-price { font-size: 10vh; }
+
+
+/* ========================================= */
+/* LAYOUTS DINÂMICOS (VIA CLASSE NO BODY)    */
+/* ========================================= */
+
+/* LAYOUT: DESTAQUE (1 Produto Gigante) */
+.layout-destaque .carousel-container {
+    padding: 2vh 2vw;
+}
+.layout-destaque .product-card {
+    width: 85vw;
+    height: 75vh;
+    flex-direction: row;
+    padding: 3vh 3vw;
+    border-width: 8px;
+    border-radius: 40px;
+}
+.layout-destaque .product-image-wrapper {
+    flex: 0 0 50%;
+    border-radius: 30px;
+}
+.layout-destaque .product-name {
+    font-size: 7.5vh;
+    margin-bottom: 4vh;
+    -webkit-line-clamp: 3;
+    line-height: 1.3;
+}
+.layout-destaque .old-price {
+    font-size: 5vh;
+}
+.layout-destaque .new-price {
+    font-size: 15vh;
+}
+.layout-destaque .has-long-name .product-name {
+    font-size: 6vh;
+}
+.layout-destaque .has-very-long-name .product-name {
+    font-size: 5vh;
+}
+.layout-destaque .has-long-price .new-price {
+    font-size: 12vh;
+}
+.layout-destaque .no-image-placeholder::before {
+    font-size: 30vh;
+}
+
+/* LAYOUT: COMPACTO (6 Produtos - 3 por linha) */
+.layout-compacto .carousel-container {
+    gap: 2vw;
+    padding: 2vh 2vw;
+}
+.layout-compacto .product-card {
+    width: calc(31vw - 1vw);
+    height: 35vh; /* Reduzi ligeiramente de 38vh para 35vh para dar respiro ao footer */
+    flex-direction: column; /* Imagem em cima, texto embaixo */
+    padding: 1.5vh 1.5vw;
+}
+.layout-compacto .product-image-wrapper {
+    flex: 0 0 44%; /* Reduzido de 52% para 44% para dar mais espaço ao texto e evitar overflow */
+    height: auto;  /* FIX: Sobrescreve o height: 100% que causava overflow no modo compacto! */
+    width: 100%;
+    margin-bottom: 0.8vh; /* Reduzido de 1vh para 0.8vh */
+}
+.layout-compacto .product-info {
+    padding-left: 0;
+    align-items: center;
+    text-align: center;
+    height: auto;
+}
+.layout-compacto .product-name {
+    font-size: 2.5vh; /* Reduzi um pouquinho a fonte para não empurrar os preços */
+    margin-bottom: 0.5vh;
+}
+.layout-compacto .product-card.has-schedule .product-name {
+    font-size: 2.1vh; /* Reduzido para encaixar com a badge de validade */
+    margin-bottom: 0.3vh;
+}
+.layout-compacto .old-price {
+    font-size: 2vh;
+}
+.layout-compacto .new-price {
+    font-size: 4.5vh; /* Reduzi ligeiramente de 5vh para 4.5vh */
+}
+.layout-compacto .has-long-name .product-name {
+    font-size: 2.1vh;
+}
+.layout-compacto .product-card.has-schedule.has-long-name .product-name {
+    font-size: 1.9vh;
+}
+.layout-compacto .has-very-long-name .product-name {
+    font-size: 1.8vh;
+    -webkit-line-clamp: 3;
+}
+.layout-compacto .product-card.has-schedule.has-very-long-name .product-name {
+    font-size: 1.7vh;
+}
+.layout-compacto .has-long-price .new-price {
+    font-size: 3.8vh;
+}
+
+/* ========================================= */
+/* LAYOUT: VITRINE (Lista Esquerda + Destaque Direita) */
+/* ========================================= */
+.layout-vitrine .carousel-container {
+    display: flex;
+    flex-direction: row;
+    padding: 3vh 3vw;
+    gap: 4vw;
+    align-items: stretch;
+}
+
+/* Barra Lateral (Lista) */
+.vitrine-sidebar {
+    flex: 0 0 35%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5vh;
+    justify-content: flex-start; /* Mantém os itens alinhados ao topo sem esticar */
+}
+
+.vitrine-list-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.8vh 2vw; /* Voltei o padding para um valor intermediário que encaixe todos */
+    display: flex;
+    align-items: center;
+    transition: all 0.4s ease;
+    /* Removido o flex: 1 para evitar expansão bizarra quando há apenas 1 item */
+}
+
+.vitrine-list-item.active {
+    background: linear-gradient(90deg, #d32f2f, #ff9800);
+    border-color: #fbc02d;
+    transform: scale(1.05) translateX(1vw);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+.vitrine-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3vh 0.6vw;
+    font-size: 1.35vh;
+    font-weight: 800;
+    border-radius: 4px;
+    text-transform: uppercase;
+    line-height: 1;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.vitrine-badge-lp {
+    background-color: var(--card-leve-bg, #7a5c00);
+    border-color: rgba(251, 192, 45, 0.4);
+}
+
 .vitrine-badge-desc {
     background-color: var(--card-desc-badge-bg, #d32f2f);
     border-color: rgba(255, 255, 255, 0.2);
@@ -483,6 +678,11 @@ body {
     border-color: var(--card-pack-border, #fbc02d);
 }
 
+.vitrine-badge-unit {
+    background-color: var(--card-unitario-bg-start, #1e1b4b);
+    border-color: var(--card-unitario-border, #fbc02d);
+}
+
 .vitrine-badge-qty {
     background-color: rgba(255, 255, 255, 0.15);
     color: #fff;
@@ -491,6 +691,7 @@ body {
 .vitrine-list-item.active .vitrine-badge-lp,
 .vitrine-list-item.active .vitrine-badge-desc,
 .vitrine-list-item.active .vitrine-badge-pack,
+.vitrine-list-item.active .vitrine-badge-unit,
 .vitrine-list-item.active .vitrine-badge-qty {
     border-color: rgba(255, 255, 255, 0.5);
     background-color: rgba(0, 0, 0, 0.35);
@@ -1006,6 +1207,42 @@ body.page-exit {
     margin-top: 0.4vh;
 }
 
+/* ── UNITÁRIO (PREÇO UNITÁRIO POR QUANTIDADE) ──────────────── */
+.card-unitario {
+    background: linear-gradient(135deg, var(--card-unitario-bg-start, #1e1b4b), var(--card-unitario-bg-end, #311042));
+    border-color: var(--card-unitario-border, var(--promo-accent, #fbc02d));
+    border-width: 4px;
+}
+.card-unitario .product-name { color: var(--card-unitario-text-name, #fff); }
+.unitario-qty-label {
+    font-size: 1.8vh;
+    color: rgba(255,255,255,0.85);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.2vh;
+}
+.unitario-each-label {
+    font-size: 1.5vh;
+    color: rgba(255,255,255,0.7);
+    font-weight: 500;
+    text-transform: lowercase;
+    margin-bottom: 0.4vh;
+}
+.unitario-price-badge {
+    font-size: 7.5vh;
+    font-weight: 900;
+    color: var(--card-unitario-price, var(--promo-accent, #fbc02d));
+    line-height: 1;
+    text-shadow: 0 3px 10px rgba(251,192,45,0.3);
+}
+.unitario-old-price {
+    font-size: 1.8vh;
+    color: rgba(255,255,255,0.55);
+    text-decoration: line-through;
+    margin-top: 0.4vh;
+}
+
 /* ── SCHEDULE BADGES: ALINHAMENTO NOS MODOS SEM FOTO ──────── */
 .layout-sem-foto .schedule-badges,
 .layout-sem-foto-destaque .schedule-badges {
@@ -1022,17 +1259,19 @@ body.page-exit {
 /* ── VITRINE: texto branco nos cards escuros ───────────────── */
 .large-vitrine-card .product-name { color: #1a1a1a; }
 .large-vitrine-card.card-leva-paga .product-name,
-.large-vitrine-card.card-pack .product-name { color: var(--card-leva-text-name, #fff); }
-.large-vitrine-card.card-desconto .product-name { color: var(--card-desc-text-name, #1a1a1a); }
+.large-vitrine-card.card-pack .product-name,
+.large-vitrine-card.card-unitario .product-name { color: var(--card-unitario-text-name, #fff); }
 .large-vitrine-card.card-leva-paga .product-info,
-.large-vitrine-card.card-pack .product-info { align-items: center; text-align: center; }
+.large-vitrine-card.card-pack .product-info,
+.large-vitrine-card.card-unitario .product-info { align-items: center; text-align: center; }
 
 /* ── ESCALONAMENTO POR LAYOUT ─────────────────────────────── */
 
 /* DESTAQUE */
 .layout-destaque .card-leva-paga .product-name,
 .layout-destaque .card-desconto .product-name,
-.layout-destaque .card-pack .product-name { font-size: 6vh; margin-bottom: 3vh; }
+.layout-destaque .card-pack .product-name,
+.layout-destaque .card-unitario .product-name { font-size: 6vh; margin-bottom: 3vh; }
 .layout-destaque .lp-num           { font-size: 10vh; }
 .layout-destaque .lp-label         { font-size: 2.5vh; }
 .layout-destaque .lp-sep           { font-size: 6vh; }
@@ -1048,14 +1287,20 @@ body.page-exit {
 .layout-destaque .pack-qty-label   { font-size: 3vh; }
 .layout-destaque .pack-price-badge { font-size: 13vh; }
 .layout-destaque .pack-old-price   { font-size: 2.5vh; }
+.layout-destaque .unitario-qty-label   { font-size: 3vh; }
+.layout-destaque .unitario-each-label  { font-size: 2.5vh; }
+.layout-destaque .unitario-price-badge { font-size: 13vh; }
+.layout-destaque .unitario-old-price   { font-size: 2.5vh; }
 
 /* COMPACTO */
 .layout-compacto .card-leva-paga,
 .layout-compacto .card-desconto,
-.layout-compacto .card-pack { flex-direction: column; }
+.layout-compacto .card-pack,
+.layout-compacto .card-unitario { flex-direction: column; }
 .layout-compacto .card-leva-paga .product-info,
 .layout-compacto .card-desconto .product-info,
-.layout-compacto .card-pack .product-info { padding-left: 0; align-items: center; text-align: center; }
+.layout-compacto .card-pack .product-info,
+.layout-compacto .card-unitario .product-info { padding-left: 0; align-items: center; text-align: center; }
 .layout-compacto .lp-num           { font-size: 3.5vh; }
 .layout-compacto .lp-label         { font-size: 1.1vh; }
 .layout-compacto .lp-sep           { font-size: 2vh; }
@@ -1074,6 +1319,10 @@ body.page-exit {
 .layout-compacto .pack-qty-label   { font-size: 1.2vh; margin-bottom: 0.2vh; }
 .layout-compacto .pack-price-badge { font-size: 4.5vh; }
 .layout-compacto .pack-old-price   { font-size: 1.2vh; }
+.layout-compacto .unitario-qty-label   { font-size: 1.2vh; margin-bottom: 0.2vh; }
+.layout-compacto .unitario-each-label  { font-size: 1vh; }
+.layout-compacto .unitario-price-badge { font-size: 4.5vh; }
+.layout-compacto .unitario-old-price   { font-size: 1.2vh; }
 
 /* VITRINE */
 .large-vitrine-card .lp-num        { font-size: 9vh; }
@@ -1091,11 +1340,16 @@ body.page-exit {
 .large-vitrine-card .pack-qty-label { font-size: 2.5vh; }
 .large-vitrine-card .pack-price-badge { font-size: 12vh; }
 .large-vitrine-card .pack-old-price { font-size: 2vh; }
+.large-vitrine-card .unitario-qty-label { font-size: 2.5vh; }
+.large-vitrine-card .unitario-each-label { font-size: 2vh; }
+.large-vitrine-card .unitario-price-badge { font-size: 12vh; }
+.large-vitrine-card .unitario-old-price { font-size: 2vh; }
 
 /* SEM FOTO */
 .layout-sem-foto .card-leva-paga,
 .layout-sem-foto .card-desconto,
-.layout-sem-foto .card-pack {
+.layout-sem-foto .card-pack,
+.layout-sem-foto .card-unitario {
     flex-direction: column; justify-content: center; align-items: center;
     text-align: center; position: relative;
     background: linear-gradient(145deg, var(--card-padrao-bg-start, #ffffff), var(--card-padrao-bg-end, #fffdf0));
@@ -1113,11 +1367,16 @@ body.page-exit {
     border-color: var(--card-pack-border, var(--promo-accent, #fbc02d));
     background: linear-gradient(145deg, var(--card-pack-bg-start, #0d1b2a), var(--card-pack-bg-end, #1b263b));
 }
+.layout-sem-foto .card-unitario {
+    border-color: var(--card-unitario-border, var(--promo-accent, #fbc02d));
+    background: linear-gradient(145deg, var(--card-unitario-bg-start, #1e1b4b), var(--card-unitario-bg-end, #311042));
+}
 .layout-sem-foto .card-leva-paga .product-info,
 .layout-sem-foto .card-desconto .product-info,
 .layout-sem-foto .card-pack .product-info { padding-left: 0; align-items: center; }
 .layout-sem-foto .card-leva-paga .product-name,
-.layout-sem-foto .card-pack .product-name     { color: var(--card-leva-text-name, #fff); }
+.layout-sem-foto .card-pack .product-name,
+.layout-sem-foto .card-unitario .product-name     { color: var(--card-unitario-text-name, var(--card-leva-text-name, #fff)); }
 .layout-sem-foto .card-desconto .product-name { color: var(--card-desc-text-name, #111); }
 .layout-sem-foto .card-desconto .desc-qty-cond{ color: var(--card-desc-text-name, #222); background: rgba(211,47,47,0.12); }
 .layout-sem-foto .lp-num               { font-size: 5vh; }
@@ -1131,6 +1390,9 @@ body.page-exit {
 .layout-sem-foto .desc-prices .new-price { font-size: 6vh; }
 .layout-sem-foto .pack-qty-label       { font-size: 1.6vh; color: rgba(255,255,255,0.8); }
 .layout-sem-foto .pack-price-badge     { font-size: 7vh; }
+.layout-sem-foto .unitario-qty-label       { font-size: 1.6vh; color: rgba(255,255,255,0.85); }
+.layout-sem-foto .unitario-each-label      { font-size: 1.4vh; }
+.layout-sem-foto .unitario-price-badge     { font-size: 7vh; }
 
 /* SEM FOTO DESTAQUE */
 .layout-sem-foto-destaque .carousel-container {
@@ -1156,17 +1418,21 @@ body.page-exit {
 }
 .layout-sem-foto-destaque .card-leva-paga,
 .layout-sem-foto-destaque .card-desconto,
-.layout-sem-foto-destaque .card-pack {
+.layout-sem-foto-destaque .card-pack,
+.layout-sem-foto-destaque .card-unitario {
     flex-direction: column; justify-content: center; align-items: center;
     text-align: center; position: relative;
 }
 .layout-sem-foto-destaque .card-leva-paga { background: linear-gradient(145deg, var(--card-leva-bg-start, #1a1a2e), var(--card-leva-bg-end, #16213e)); border-color: var(--card-leva-border, var(--promo-accent, #fbc02d)); }
 .layout-sem-foto-destaque .card-pack      { background: linear-gradient(145deg, var(--card-pack-bg-start, #0d1b2a), var(--card-pack-bg-end, #1b263b)); border-color: var(--card-pack-border, var(--promo-accent, #fbc02d)); }
+.layout-sem-foto-destaque .card-unitario  { background: linear-gradient(145deg, var(--card-unitario-bg-start, #1e1b4b), var(--card-unitario-bg-end, #311042)); border-color: var(--card-unitario-border, var(--promo-accent, #fbc02d)); }
 .layout-sem-foto-destaque .card-leva-paga .product-info,
 .layout-sem-foto-destaque .card-desconto .product-info,
-.layout-sem-foto-destaque .card-pack .product-info { padding-left: 0; align-items: center; }
+.layout-sem-foto-destaque .card-pack .product-info,
+.layout-sem-foto-destaque .card-unitario .product-info { padding-left: 0; align-items: center; }
 .layout-sem-foto-destaque .card-leva-paga .product-name,
-.layout-sem-foto-destaque .card-pack .product-name     { color: var(--card-leva-text-name, #fff); }
+.layout-sem-foto-destaque .card-pack .product-name,
+.layout-sem-foto-destaque .card-unitario .product-name     { color: var(--card-unitario-text-name, var(--card-leva-text-name, #fff)); }
 .layout-sem-foto-destaque .card-desconto .product-name { color: var(--card-desc-text-name, #111); }
 .layout-sem-foto-destaque .card-desconto .desc-qty-cond{ color: var(--card-desc-text-name, #222); }
 .layout-sem-foto-destaque .lp-num         { font-size: 12vh; }
@@ -1187,3 +1453,7 @@ body.page-exit {
 .layout-sem-foto-destaque .pack-qty-label  { font-size: 3.5vh; color: rgba(255,255,255,0.8); }
 .layout-sem-foto-destaque .pack-price-badge{ font-size: 16vh; }
 .layout-sem-foto-destaque .pack-old-price  { font-size: 3vh; }
+.layout-sem-foto-destaque .unitario-qty-label  { font-size: 3.5vh; color: rgba(255,255,255,0.85); }
+.layout-sem-foto-destaque .unitario-each-label { font-size: 3vh; }
+.layout-sem-foto-destaque .unitario-price-badge{ font-size: 16vh; }
+.layout-sem-foto-destaque .unitario-old-price  { font-size: 3vh; }

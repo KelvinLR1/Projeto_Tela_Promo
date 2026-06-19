@@ -186,7 +186,13 @@ function getDisplayConfig() {
     cardPackBgEnd: sanitizeColor(process.env.CARD_PACK_BG_END, '#1b263b'),
     cardPackBorder: sanitizeColor(process.env.CARD_PACK_BORDER, '#fbc02d'),
     cardPackTextName: sanitizeColor(process.env.CARD_PACK_TEXT_NAME, '#ffffff'),
-    cardPackPrice: sanitizeColor(process.env.CARD_PACK_PRICE, '#fbc02d')
+    cardPackPrice: sanitizeColor(process.env.CARD_PACK_PRICE, '#fbc02d'),
+
+    cardUnitarioBgStart: sanitizeColor(process.env.CARD_UNITARIO_BG_START, '#1e1b4b'),
+    cardUnitarioBgEnd: sanitizeColor(process.env.CARD_UNITARIO_BG_END, '#311042'),
+    cardUnitarioBorder: sanitizeColor(process.env.CARD_UNITARIO_BORDER, '#fbc02d'),
+    cardUnitarioTextName: sanitizeColor(process.env.CARD_UNITARIO_TEXT_NAME, '#ffffff'),
+    cardUnitarioPrice: sanitizeColor(process.env.CARD_UNITARIO_PRICE, '#fbc02d')
   };
 }
 
@@ -540,7 +546,9 @@ app.get('/api/promocoes', async (req, res) => {
       // Tipo: desconto
       { id: 103, nome_produto: "Shampoo Premium 400ml", preco_anterior: 18.90, preco_atual: 17.01, link_imagem: "https://loremflickr.com/400/400/shampoo,bottle/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'desconto', percentual_desconto: 10, qtd_minima: 3, condicao_qty: 'a_cada' },
       // Tipo: pack
-      { id: 104, nome_produto: "Refresco XXX 1L", preco_anterior: 12.00, preco_atual: 9.99, link_imagem: "https://loremflickr.com/400/400/juice,bottle/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'pack', qtd_pack: 3, condicao_qty: 'a_partir' }
+      { id: 104, nome_produto: "Refresco XXX 1L", preco_anterior: 12.00, preco_atual: 9.99, link_imagem: "https://loremflickr.com/400/400/juice,bottle/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'pack', qtd_pack: 3 },
+      // Tipo: unitario
+      { id: 105, nome_produto: "Sabonete Líquido Refil 200ml", preco_anterior: 7.50, preco_atual: 5.99, link_imagem: "https://loremflickr.com/400/400/soap,liquid/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'unitario', qtd_minima: 3, condicao_qty: 'a_partir' }
     );
 
     res.json(mockProdutos);
@@ -729,12 +737,25 @@ app.post('/api/config/test', cookieAuth, async (req, res) => {
 
 function isSafeSelectQuery(query) {
   if (!query || query.trim() === '') return true;
-  const cleaned = query.trim().toUpperCase();
-  if (cleaned.includes(';')) return false; // Impede múltiplas instruções
-  if (!cleaned.startsWith('SELECT') && !cleaned.startsWith('WITH')) return false;
   
+  // Remove comentários SQL de linha simples (-- ...) e bloco (/* ... */)
+  const queryWithoutComments = query
+    .replace(/--.*$/gm, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+
+  // Divide a query por ponto e vírgula para validar cada instrução individualmente
+  const statements = queryWithoutComments.split(';').map(s => s.trim()).filter(Boolean);
+  
+  const allowedPrefixes = ['SELECT', 'WITH', 'SET', 'DECLARE'];
   const forbidden = /\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|REPLACE|CREATE|GRANT|REVOKE|EXEC|EXECUTE|CALL|MERGE|COMMIT|ROLLBACK|DENY)\b/i;
-  if (forbidden.test(query)) return false;
+  
+  for (const statement of statements) {
+    const cleaned = statement.toUpperCase();
+    const startsWithAllowed = allowedPrefixes.some(prefix => cleaned.startsWith(prefix));
+    if (!startsWithAllowed) return false;
+    if (forbidden.test(statement)) return false;
+  }
+  
   return true;
 }
 
@@ -794,11 +815,8 @@ function envLine(key, value) {
   if (/^[A-Za-z0-9_./:@-]*$/.test(raw)) {
     return `${key}=${raw}`;
   }
-  // Caminhos Windows com barras invertidas usam aspas SIMPLES (dotenv lê literalmente,
-  // sem processar escapes como \\→\ que JSON.stringify causaria)
-  if (raw.includes('\\')) {
-    return `${key}='${raw}'`;
-  }
+  // Se contiver caracteres especiais, quebras de linha ou aspas, usamos JSON.stringify
+  // que garante o escape correto e compatibilidade total com o parser do dotenv.
   return `${key}=${JSON.stringify(raw)}`;
 }
 
@@ -864,6 +882,12 @@ function buildEnvContent() {
     envLine('CARD_PACK_BORDER', process.env.CARD_PACK_BORDER || '#fbc02d'),
     envLine('CARD_PACK_TEXT_NAME', process.env.CARD_PACK_TEXT_NAME || '#ffffff'),
     envLine('CARD_PACK_PRICE', process.env.CARD_PACK_PRICE || '#fbc02d'),
+    '',
+    envLine('CARD_UNITARIO_BG_START', process.env.CARD_UNITARIO_BG_START || '#1e1b4b'),
+    envLine('CARD_UNITARIO_BG_END', process.env.CARD_UNITARIO_BG_END || '#311042'),
+    envLine('CARD_UNITARIO_BORDER', process.env.CARD_UNITARIO_BORDER || '#fbc02d'),
+    envLine('CARD_UNITARIO_TEXT_NAME', process.env.CARD_UNITARIO_TEXT_NAME || '#ffffff'),
+    envLine('CARD_UNITARIO_PRICE', process.env.CARD_UNITARIO_PRICE || '#fbc02d'),
     ''
   ].join('\n');
 }
@@ -962,7 +986,13 @@ app.post('/api/config/display/save', cookieAuth, (req, res) => {
       cardPackBgEnd,
       cardPackBorder,
       cardPackTextName,
-      cardPackPrice
+      cardPackPrice,
+
+      cardUnitarioBgStart,
+      cardUnitarioBgEnd,
+      cardUnitarioBorder,
+      cardUnitarioTextName,
+      cardUnitarioPrice
     } = req.body;
 
     process.env.LOCAL_IMAGES_PATH = sanitizeWindowsPath(localImagesPath);
@@ -1011,6 +1041,12 @@ app.post('/api/config/display/save', cookieAuth, (req, res) => {
     process.env.CARD_PACK_BORDER = sanitizeColor(cardPackBorder, '#fbc02d');
     process.env.CARD_PACK_TEXT_NAME = sanitizeColor(cardPackTextName, '#ffffff');
     process.env.CARD_PACK_PRICE = sanitizeColor(cardPackPrice, '#fbc02d');
+
+    process.env.CARD_UNITARIO_BG_START = sanitizeColor(cardUnitarioBgStart, '#1e1b4b');
+    process.env.CARD_UNITARIO_BG_END = sanitizeColor(cardUnitarioBgEnd, '#311042');
+    process.env.CARD_UNITARIO_BORDER = sanitizeColor(cardUnitarioBorder, '#fbc02d');
+    process.env.CARD_UNITARIO_TEXT_NAME = sanitizeColor(cardUnitarioTextName, '#ffffff');
+    process.env.CARD_UNITARIO_PRICE = sanitizeColor(cardUnitarioPrice, '#fbc02d');
 
     saveEnvFile();
     res.json({ success: true, message: 'Configuracoes visuais salvas!', config: getDisplayConfig() });
@@ -1141,7 +1177,8 @@ app.post('/api/logo/reset', cookieAuth, (req, res) => {
   }
 });
 
-// Inicia o servidor
+// Inicia o servidor (reiniciado com novas configs do .env)
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+

@@ -71,7 +71,13 @@ const fields = {
     cardPackBgEnd: document.getElementById('cardPackBgEnd'),
     cardPackBorder: document.getElementById('cardPackBorder'),
     cardPackTextName: document.getElementById('cardPackTextName'),
-    cardPackPrice: document.getElementById('cardPackPrice')
+    cardPackPrice: document.getElementById('cardPackPrice'),
+
+    cardUnitarioBgStart: document.getElementById('cardUnitarioBgStart'),
+    cardUnitarioBgEnd: document.getElementById('cardUnitarioBgEnd'),
+    cardUnitarioBorder: document.getElementById('cardUnitarioBorder'),
+    cardUnitarioTextName: document.getElementById('cardUnitarioTextName'),
+    cardUnitarioPrice: document.getElementById('cardUnitarioPrice')
 };
 
 const colorPropertyMap = {
@@ -108,7 +114,13 @@ const colorPropertyMap = {
     cardPackBgEnd: '--card-pack-bg-end',
     cardPackBorder: '--card-pack-border',
     cardPackTextName: '--card-pack-text-name',
-    cardPackPrice: '--card-pack-price'
+    cardPackPrice: '--card-pack-price',
+
+    cardUnitarioBgStart: '--card-unitario-bg-start',
+    cardUnitarioBgEnd: '--card-unitario-bg-end',
+    cardUnitarioBorder: '--card-unitario-border',
+    cardUnitarioTextName: '--card-unitario-text-name',
+    cardUnitarioPrice: '--card-unitario-price'
 };
 
 function syncAllPreviews() {
@@ -273,7 +285,13 @@ function getDisplayFormData() {
         cardPackBgEnd: fields.cardPackBgEnd.value,
         cardPackBorder: fields.cardPackBorder.value,
         cardPackTextName: fields.cardPackTextName.value,
-        cardPackPrice: fields.cardPackPrice.value
+        cardPackPrice: fields.cardPackPrice.value,
+
+        cardUnitarioBgStart: fields.cardUnitarioBgStart.value,
+        cardUnitarioBgEnd: fields.cardUnitarioBgEnd.value,
+        cardUnitarioBorder: fields.cardUnitarioBorder.value,
+        cardUnitarioTextName: fields.cardUnitarioTextName.value,
+        cardUnitarioPrice: fields.cardUnitarioPrice.value
     };
 }
 
@@ -356,6 +374,12 @@ async function loadDisplayConfig() {
         fields.cardPackBorder.value = data.cardPackBorder || '#fbc02d';
         fields.cardPackTextName.value = data.cardPackTextName || '#ffffff';
         fields.cardPackPrice.value = data.cardPackPrice || '#fbc02d';
+
+        fields.cardUnitarioBgStart.value = data.cardUnitarioBgStart || '#1e1b4b';
+        fields.cardUnitarioBgEnd.value = data.cardUnitarioBgEnd || '#311042';
+        fields.cardUnitarioBorder.value = data.cardUnitarioBorder || '#fbc02d';
+        fields.cardUnitarioTextName.value = data.cardUnitarioTextName || '#ffffff';
+        fields.cardUnitarioPrice.value = data.cardUnitarioPrice || '#fbc02d';
 
         updateSummary();
         syncAllPreviews();
@@ -559,6 +583,12 @@ document.getElementById('btnRestoreDefaults').addEventListener('click', function
         setColor(fields.cardPackBorder, '#fbc02d');
         setColor(fields.cardPackTextName, '#ffffff');
         setColor(fields.cardPackPrice, '#fbc02d');
+
+        setColor(fields.cardUnitarioBgStart, '#1e1b4b');
+        setColor(fields.cardUnitarioBgEnd, '#311042');
+        setColor(fields.cardUnitarioBorder, '#fbc02d');
+        setColor(fields.cardUnitarioTextName, '#ffffff');
+        setColor(fields.cardUnitarioPrice, '#fbc02d');
 
         showToast('Padrões de fábrica aplicados temporariamente. Clique em Salvar para gravar.', 'info');
         updateSummary();

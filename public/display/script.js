@@ -129,6 +129,12 @@ function applyDisplayConfig(config) {
     document.documentElement.style.setProperty('--card-pack-text-name', config.cardPackTextName || '#ffffff');
     document.documentElement.style.setProperty('--card-pack-price', config.cardPackPrice || '#fbc02d');
 
+    document.documentElement.style.setProperty('--card-unitario-bg-start', config.cardUnitarioBgStart || '#1e1b4b');
+    document.documentElement.style.setProperty('--card-unitario-bg-end', config.cardUnitarioBgEnd || '#311042');
+    document.documentElement.style.setProperty('--card-unitario-border', config.cardUnitarioBorder || '#fbc02d');
+    document.documentElement.style.setProperty('--card-unitario-text-name', config.cardUnitarioTextName || '#ffffff');
+    document.documentElement.style.setProperty('--card-unitario-price', config.cardUnitarioPrice || '#fbc02d');
+
     applyLayout(requestedLayout || config.defaultLayout || 'padrao');
 }
 
@@ -352,7 +358,7 @@ function normalizePromotion(item) {
     // Tipo de promoção: 'preco_fixo' | 'leva_paga' | 'desconto' | 'pack'
     // null/vazio -> comportamento padrão (preco_fixo)
     const tipoRaw = String(item.tipo_promo || '').trim().toLowerCase();
-    const TIPOS_VALIDOS = ['preco_fixo', 'leva_paga', 'desconto', 'pack'];
+    const TIPOS_VALIDOS = ['preco_fixo', 'leva_paga', 'desconto', 'pack', 'unitario'];
     const tipo_promo = TIPOS_VALIDOS.includes(tipoRaw) ? tipoRaw : 'preco_fixo';
 
     return {
@@ -779,6 +785,8 @@ function renderGrid(itemsToShow) {
             carouselContainer.appendChild(buildCardDesconto(item));
         } else if (tipo === 'pack') {
             carouselContainer.appendChild(buildCardPack(item));
+        } else if (tipo === 'unitario') {
+            carouselContainer.appendChild(buildCardUnitario(item));
         } else {
             carouselContainer.appendChild(buildCardPrecoFixo(item));
         }
@@ -808,7 +816,11 @@ function createCardBase(item, extraClass) {
         } else if (tipo === 'desconto' && item.percentual_desconto != null) {
             badge.textContent = `${item.percentual_desconto}% OFF`;
         } else if (tipo === 'pack' && item.qtd_pack) {
-            badge.textContent = `${item.qtd_pack} por ${formatCurrency(item.preco_atual)}`;
+            badge.textContent = `${item.qtd_pack} unidades por ${formatCurrency(item.preco_atual)}`;
+        } else if (tipo === 'unitario' && (item.qtd_minima || item.qtd_pack)) {
+            const qty = item.qtd_minima || item.qtd_pack;
+            const condText = (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') ? 'A cada' : 'A partir de';
+            badge.textContent = `${condText} ${qty} un. por ${formatCurrency(item.preco_atual)} cada`;
         } else {
             badge.textContent = getValidityBadgeText(item) || 'OFERTA IMPERDÍVEL';
         }
@@ -992,14 +1004,10 @@ function buildCardPack(item) {
     info.appendChild(validityBadgeEl); // badge de validade abaixo do nome
 
     const qtd = item.qtd_pack;
-    if (qtd && qtd > 1) {
+    if (qtd && qtd > 0) {
         const label = document.createElement('div');
         label.className = 'pack-qty-label';
-        if (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') {
-            label.textContent = `A cada ${qtd} unidades por apenas`;
-        } else {
-            label.textContent = `A partir de ${qtd} unidades por apenas`;
-        }
+        label.textContent = `${qtd} unidades por`;
         info.appendChild(label);
     }
 
@@ -1011,6 +1019,46 @@ function buildCardPack(item) {
     if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
         const old = document.createElement('div');
         old.className = 'pack-old-price';
+        old.textContent = `Antes: ${formatCurrency(item.preco_anterior)}`;
+        info.appendChild(old);
+    }
+
+    return card;
+}
+
+// Tipo: Unitario (Preço unitário por quantidade)
+function buildCardUnitario(item) {
+    const { card, info, validityBadgeEl } = createCardBase(item, 'card-unitario');
+
+    const name = document.createElement('h2');
+    name.className = 'product-name';
+    name.textContent = item.nome_produto;
+    info.appendChild(name);
+    info.appendChild(validityBadgeEl);
+
+    const qty = item.qtd_minima || item.qtd_pack || 3;
+    const label = document.createElement('div');
+    label.className = 'unitario-qty-label';
+    if (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') {
+        label.textContent = `Comprando ${qty} unidades`;
+    } else {
+        label.textContent = `A partir de ${qty} unidades`;
+    }
+    info.appendChild(label);
+
+    const eachLabel = document.createElement('div');
+    eachLabel.className = 'unitario-each-label';
+    eachLabel.textContent = 'cada uma sai por:';
+    info.appendChild(eachLabel);
+
+    const priceBadge = document.createElement('div');
+    priceBadge.className = 'unitario-price-badge';
+    priceBadge.textContent = formatCurrency(item.preco_atual);
+    info.appendChild(priceBadge);
+
+    if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
+        const old = document.createElement('div');
+        old.className = 'unitario-old-price';
         old.textContent = `Antes: ${formatCurrency(item.preco_anterior)}`;
         info.appendChild(old);
     }
@@ -1081,8 +1129,13 @@ function renderVitrine(itemsToShow) {
         } else if (tipo === 'pack') {
             const badge = document.createElement('span');
             badge.className = 'vitrine-badge vitrine-badge-pack';
-            const prefix = (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') ? 'Cada' : 'Pack';
-            badge.textContent = `${prefix} ${item.qtd_pack || '?'} un.`;
+            badge.textContent = `Pack ${item.qtd_pack || '?'} un.`;
+            priceRow.appendChild(badge);
+        } else if (tipo === 'unitario') {
+            const badge = document.createElement('span');
+            badge.className = 'vitrine-badge vitrine-badge-unit';
+            const prefix = (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') ? 'Cada' : 'Mín.';
+            badge.textContent = `${prefix} ${item.qtd_minima || item.qtd_pack || '?'} un.`;
             priceRow.appendChild(badge);
         }
 
@@ -1187,14 +1240,10 @@ function updateVitrineHighlight(item, container) {
     } else if (tipo === 'pack') {
         // ── Pack na vitrine ──
         const qtd = item.qtd_pack;
-        if (qtd && qtd > 1) {
+        if (qtd && qtd > 0) {
             const lbl = document.createElement('div');
             lbl.className = 'pack-qty-label';
-            if (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') {
-                lbl.textContent = `A cada ${qtd} unidades por apenas`;
-            } else {
-                lbl.textContent = `A partir de ${qtd} unidades por apenas`;
-            }
+            lbl.textContent = `${qtd} unidades por`;
             info.appendChild(lbl);
         }
         const pb = document.createElement('div');
@@ -1204,6 +1253,35 @@ function updateVitrineHighlight(item, container) {
         if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
             const old = document.createElement('div');
             old.className = 'pack-old-price';
+            old.textContent = `Antes: ${formatCurrency(item.preco_anterior)}`;
+            info.appendChild(old);
+        }
+
+    } else if (tipo === 'unitario') {
+        // ── Unitário na vitrine ──
+        const qty = item.qtd_minima || item.qtd_pack || 3;
+        const lbl = document.createElement('div');
+        lbl.className = 'unitario-qty-label';
+        if (item.condicao_qty === 'a_cada' || item.condicao_qty === 'cada' || item.condicao_qty === 'a cada') {
+            lbl.textContent = `Comprando ${qty} unidades`;
+        } else {
+            lbl.textContent = `A partir de ${qty} unidades`;
+        }
+        info.appendChild(lbl);
+
+        const eachLbl = document.createElement('div');
+        eachLbl.className = 'unitario-each-label';
+        eachLbl.textContent = 'cada uma sai por:';
+        info.appendChild(eachLbl);
+
+        const pb = document.createElement('div');
+        pb.className = 'unitario-price-badge';
+        pb.textContent = formatCurrency(item.preco_atual);
+        info.appendChild(pb);
+
+        if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
+            const old = document.createElement('div');
+            old.className = 'unitario-old-price';
             old.textContent = `Antes: ${formatCurrency(item.preco_anterior)}`;
             info.appendChild(old);
         }

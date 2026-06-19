@@ -165,118 +165,217 @@
                                                 <td><code>nome_produto</code></td>
                                                 <td>TEXT</td>
                                                 <td><span class="badge-req">Obrigatório</span></td>
-                                                <td>Nome exibido no card</td>
+                                                <td>
+                                                    Nome exibido no card
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-todos">Todos os tipos</span></div>
+                                                </td>
                                             </tr>
                                             <tr class="required-row">
                                                 <td><code>preco_atual</code></td>
                                                 <td>DECIMAL</td>
                                                 <td><span class="badge-req">Obrigatório</span></td>
-                                                <td>Preço promocional em destaque</td>
+                                                <td>
+                                                    Preço promocional em destaque
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-todos">Todos os tipos</span></div>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><code>id</code></td>
                                                 <td>INTEGER</td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>ID do produto — Essencial para a busca de imagens locais por ID</td>
+                                                <td>
+                                                    ID do produto — essencial para a busca de imagens locais por ID
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-todos">Todos os tipos</span></div>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><code>preco_anterior</code></td>
                                                 <td>DECIMAL</td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Preço riscado (de por)</td>
+                                                <td>
+                                                    Preço riscado "de por" exibido acima do preço atual
+                                                    <div class="tipo-tags">
+                                                        <span class="tipo-tag tipo-tag-fixo">preco_fixo</span>
+                                                        <span class="tipo-tag tipo-tag-desc">desconto</span>
+                                                        <span class="tipo-tag tipo-tag-pack">pack</span>
+                                                        <span class="tipo-tag tipo-tag-unit">unitario</span>
+                                                    </div>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><code>link_imagem</code></td>
                                                 <td>TEXT</td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>URL completa ou caminho (ex: <em>https://...</em> ou <em>/imagens/foto.jpg</em>)</td>
+                                                <td>
+                                                    URL completa ou caminho da imagem (ex: <em>https://…</em> ou <em>/imagens/foto.jpg</em>)
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-todos">Todos os tipos</span></div>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><code>data_validade</code></td>
                                                 <td>DATE <em>YYYY-MM-DD</em></td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Validade simples — exibe badge automática</td>
+                                                <td>
+                                                    Validade simples — exibe badge automático de contagem regressiva
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-todos">Todos os tipos</span></div>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><code>data_inicio</code></td>
                                                 <td>DATE <em>YYYY-MM-DD</em></td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Início do período de oferta</td>
+                                                <td>
+                                                    Início do período de oferta (oculta o card antes desta data)
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-todos">Todos os tipos</span></div>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><code>data_fim</code></td>
                                                 <td>DATE <em>YYYY-MM-DD</em></td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Fim do período de oferta</td>
+                                                <td>
+                                                    Fim do período de oferta (oculta o card após esta data)
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-todos">Todos os tipos</span></div>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><code>dias_semana</code></td>
                                                 <td>TEXT <em>ex: 1,3,5</em></td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Dias válidos: 0=Dom … 6=Sáb, separados por vírgula</td>
+                                                <td>
+                                                    Dias válidos: 0=Dom … 6=Sáb, separados por vírgula
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-todos">Todos os tipos</span></div>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><code>hora_inicio</code></td>
                                                 <td>TEXT <em>HH:MM</em></td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Hora de início da oferta</td>
+                                                <td>
+                                                    Hora de início da oferta (filtra por horário)
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-todos">Todos os tipos</span></div>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><code>hora_fim</code></td>
                                                 <td>TEXT <em>HH:MM</em></td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Hora de término da oferta</td>
+                                                <td>
+                                                    Hora de término da oferta (filtra por horário)
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-todos">Todos os tipos</span></div>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><code>texto_validade</code></td>
                                                 <td>TEXT</td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Texto livre para o badge (ex: &ldquo;SÓ HOJE&rdquo;). Substitui todas as regras de data/hora.</td>
+                                                <td>
+                                                    Texto livre para o badge (ex: &ldquo;SÓ HOJE&rdquo;). Substitui todas as regras de data/hora.
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-todos">Todos os tipos</span></div>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><code>tipo_promo</code></td>
                                                 <td>TEXT</td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Tipo de promoção: <code>preco_fixo</code>, <code>leva_paga</code>, <code>desconto</code> ou <code>pack</code> (padrão: <code>preco_fixo</code>).</td>
+                                                <td>
+                                                    Design visual do card. Padrão: <code>preco_fixo</code> se omitido ou NULL.
+                                                    <div class="tipo-tags">
+                                                        <span class="tipo-tag tipo-tag-fixo">preco_fixo</span>
+                                                        <span class="tipo-tag tipo-tag-leva">leva_paga</span>
+                                                        <span class="tipo-tag tipo-tag-desc">desconto</span>
+                                                        <span class="tipo-tag tipo-tag-pack">pack</span>
+                                                        <span class="tipo-tag tipo-tag-unit">unitario</span>
+                                                    </div>
+                                                </td>
                                             </tr>
-                                            <tr>
+
+                                            <!-- ── Campos específicos por tipo ── -->
+                                            <tr style="background: rgba(74,163,255,0.04);">
                                                 <td><code>qtd_leva</code></td>
                                                 <td>INTEGER</td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Quantidade total de itens que o cliente leva na promoção Leva e Pague (ex: 3).</td>
+                                                <td>
+                                                    Quantidade total que o cliente <strong>leva</strong> (ex: 3)
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-leva">leva_paga</span></div>
+                                                </td>
                                             </tr>
-                                            <tr>
+                                            <tr style="background: rgba(74,163,255,0.04);">
                                                 <td><code>qtd_paga</code></td>
                                                 <td>INTEGER</td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Quantidade de itens cobrados na promoção Leva e Pague (ex: 2).</td>
+                                                <td>
+                                                    Quantidade que o cliente <strong>paga</strong> (ex: 2 → Leve 3, Pague 2)
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-leva">leva_paga</span></div>
+                                                </td>
                                             </tr>
-                                            <tr>
+                                            <tr style="background: rgba(246,110,60,0.04);">
                                                 <td><code>percentual_desconto</code></td>
                                                 <td>DECIMAL</td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Porcentagem de desconto na promoção de Desconto (ex: 10 para 10% OFF).</td>
+                                                <td>
+                                                    Porcentagem de desconto (ex: 10 → exibe <em>10% OFF</em>)
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-desc">desconto</span></div>
+                                                </td>
                                             </tr>
-                                            <tr>
+                                            <tr style="background: rgba(246,110,60,0.04);">
                                                 <td><code>qtd_minima</code></td>
                                                 <td>INTEGER</td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Quantidade mínima de itens para ativar o desconto (ex: 3).</td>
+                                                <td>
+                                                    Quantidade gatilho para ativar a condição. Se NULL ou 1, não exibe a condição de quantidade.
+                                                    <div class="tipo-tags">
+                                                        <span class="tipo-tag tipo-tag-desc">desconto</span>
+                                                        <span class="tipo-tag tipo-tag-unit">unitario</span>
+                                                    </div>
+                                                </td>
                                             </tr>
-                                            <tr>
+                                            <tr style="background: rgba(246,201,69,0.04);">
                                                 <td><code>qtd_pack</code></td>
                                                 <td>INTEGER</td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Quantidade de itens inclusos no pack de preço fixo (ex: 3 por R$ 30,00).</td>
+                                                <td>
+                                                    Quantidade de itens do <strong>pacote fechado</strong>. Exibe: <em>"X unidades por R$ Y"</em>. Não usa <code>condicao_qty</code>.
+                                                    <div class="tipo-tags">
+                                                        <span class="tipo-tag tipo-tag-pack">pack</span>
+                                                        <small>Também aceito como alias de <code>qtd_minima</code> no tipo <span class="tipo-tag tipo-tag-unit" style="font-size:0.58rem;">unitario</span></small>
+                                                    </div>
+                                                </td>
                                             </tr>
-                                            <tr>
+                                            <tr style="background: rgba(246,110,60,0.04);">
                                                 <td><code>condicao_qty</code></td>
                                                 <td>TEXT</td>
                                                 <td><span class="badge-opt">Opcional</span></td>
-                                                <td>Modo da quantidade (Desconto/Pack): <code>a_partir</code> (A partir de) ou <code>a_cada</code> (A cada).</td>
+                                                <td>
+                                                    Modo da condição de quantidade: <code>a_partir</code> (padrão, exibe <em>"A partir de X unidades"</em>) ou <code>a_cada</code> (exibe <em>"Comprando X unidades"</em>). <strong>Não se aplica ao tipo pack.</strong>
+                                                    <div class="tipo-tags">
+                                                        <span class="tipo-tag tipo-tag-desc">desconto</span>
+                                                        <span class="tipo-tag tipo-tag-unit">unitario</span>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
+
+
+                                    <div class="local-images-info" style="margin-top: 20px; border-color: rgba(246, 201, 69, 0.25); background: rgba(246, 201, 69, 0.04);">
+                                        <span class="info-icon" style="color: var(--primary);">👑</span>
+                                        <div>
+                                            <strong style="color: var(--primary);">Hierarquia e Prioridade dos Campos Opcionais</strong>
+                                            <p style="margin: 6px 0 0; font-size: 0.76rem;">
+                                                O sistema utiliza as seguintes regras de prioridade para renderizar as informações e badges na tela:
+                                            </p>
+                                            <ul style="margin: 8px 0 0; padding-left: 20px; font-size: 0.76rem; display: flex; flex-direction: column; gap: 4px;">
+                                                <li><strong>1. Texto de Validade Livre (<code>texto_validade</code>)</strong>: Tem prioridade <strong>máxima</strong>. Se preenchido (ex: <em>"SÓ HOJE"</em>, <em>"FIM DE SEMANA"</em>), o sistema exibe este texto e ignora todas as outras datas e regras de agendamento.</li>
+                                                <li><strong>2. Alerta de Último Dia (<code>data_fim</code> / <code>data_validade</code>)</strong>: Se a data final do período coincidir exatamente com a data de hoje, o sistema exibe automaticamente o aviso <strong>"ÚLTIMO DIA!"</strong> para chamar mais atenção do cliente.</li>
+                                                <li><strong>3. Agendamento Detalhado (<code>dias_semana</code> e <code>hora_inicio</code> / <code>hora_fim</code>)</strong>: Se houver restrições de dias ou horários definidos no banco, exibe os respectivos badges (ex: <em>"DIAS: SEG/QUA/SEX"</em> ou <em>"HORÁRIO: 08:00 - 12:00"</em>).</li>
+                                                <li><strong>4. Contagem Regressiva Simples (<code>data_validade</code>)</strong>: Se nenhuma das opções acima se aplicar, o sistema calcula os dias restantes para o término e exibe avisos automáticos (ex: <em>"ATÉ AMANHÃ"</em>, <em>"ATÉ SÁBADO"</em> ou a data formatada <em>"ATÉ DD/MM"</em>).</li>
+                                            </ul>
+                                            <p style="margin: 10px 0 0; font-size: 0.76rem;">
+                                                <strong>Layout dos Cards:</strong> O campo <code>tipo_promo</code> determina o design visual do card. Os campos específicos de quantidade (<code>qtd_minima</code>, <code>qtd_leva</code>, <code>qtd_pack</code>) só têm efeito se o respectivo layout (<code>desconto</code>, <code>leva_paga</code>, <code>pack</code>, <code>unitario</code>) estiver ativo. O campo <code>condicao_qty</code> é aplicado apenas em <code>desconto</code> e <code>unitario</code>; o tipo <code>pack</code> é sempre um pacote fechado.
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </section>
@@ -590,9 +689,54 @@
                                                     </div>
                                                     <div class="product-info-preview">
                                                         <div class="product-name-preview">Refresco Néctar de Frutas 1L</div>
-                                                        <div class="pack-qty-label">Leve 3 por apenas:</div>
+                                                        <div class="pack-qty-label">3 unidades por</div>
                                                         <div class="pack-price-badge">R$ 9,99</div>
                                                         <div class="pack-old-price">Preço normal: R$ 12,00</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </fieldset>
+
+                                    <!-- CARD UNITARIO -->
+                                    <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-top: 20px; background: rgba(0,0,0,0.12);">
+                                        <legend style="padding: 0 10px; font-size: 0.76rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em;">Card Unitário (Preço por Qtd)</legend>
+                                        <div class="fieldset-content">
+                                            <div class="fieldset-controls">
+                                                <div class="color-grid">
+                                                    <label class="color-field" for="cardUnitarioBgStart">
+                                                        <span>Fundo Gradiente Início</span>
+                                                        <input type="color" id="cardUnitarioBgStart">
+                                                    </label>
+                                                    <label class="color-field" for="cardUnitarioBgEnd">
+                                                        <span>Fundo Gradiente Fim</span>
+                                                        <input type="color" id="cardUnitarioBgEnd">
+                                                    </label>
+                                                    <label class="color-field" for="cardUnitarioBorder">
+                                                        <span>Cor da Borda</span>
+                                                        <input type="color" id="cardUnitarioBorder">
+                                                    </label>
+                                                    <label class="color-field" for="cardUnitarioTextName">
+                                                        <span>Cor do Nome do Produto</span>
+                                                        <input type="color" id="cardUnitarioTextName">
+                                                    </label>
+                                                    <label class="color-field" for="cardUnitarioPrice">
+                                                        <span>Preço Unitário</span>
+                                                        <input type="color" id="cardUnitarioPrice">
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="fieldset-preview">
+                                                <div class="card-preview" id="previewCardUnitario">
+                                                    <div class="product-image-wrapper-preview">
+                                                        <span class="preview-img-placeholder">🧼</span>
+                                                    </div>
+                                                    <div class="product-info-preview">
+                                                        <div class="product-name-preview">Sabonete Líquido Refil 200ml</div>
+                                                        <div class="unitario-qty-label-preview">A partir de 3 unidades</div>
+                                                        <div class="unitario-each-label-preview" style="font-size: 11px; opacity: 0.7; text-transform: lowercase; margin-bottom: 2px;">cada uma sai por:</div>
+                                                        <div class="unitario-price-badge-preview" style="font-size: 24px; font-weight: 800; line-height: 1;">R$ 5,99</div>
+                                                        <div class="old-price-preview" style="font-size: 12px; opacity: 0.6; text-decoration: line-through; margin-top: 3px;">Preço normal: R$ 7,50</div>
                                                     </div>
                                                 </div>
                                             </div>
