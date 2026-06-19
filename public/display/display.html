@@ -47,11 +47,11 @@
     <script src="script.js"></script>
     <script>
         // ── FULLSCREEN MANAGER ──────────────────────────────────────────
-        // Detecta mobile/tablet com tripla verificação:
-        // 1. User Agent  2. Touch points  3. Largura menor que 1280px
+        // Detecta mobile, tablet ou TV:
         const hasMobileUA = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const hasTouchScreen = navigator.maxTouchPoints > 0 && window.innerWidth < 1280;
-        const isMobile = hasMobileUA && hasTouchScreen;
+        const hasTouchScreen = navigator.maxTouchPoints > 0;
+        const isTV = /SmartTV|GoogleTV|AppleTV|AndroidTV|TV|CastJS/i.test(navigator.userAgent);
+        const isMobile = hasMobileUA || hasTouchScreen || isTV;
 
 
         // Overlay de fullscreen
@@ -60,7 +60,7 @@
         overlay.innerHTML = `
             <div class="fs-box">
                 <div class="fs-icon">⛶</div>
-                <div class="fs-title">Toque para Tela Cheia</div>
+                <div class="fs-title">Clique ou Toque para Tela Cheia</div>
                 <div class="fs-subtitle">Oculta a barra do navegador</div>
             </div>`;
         overlay.style.cssText = `
@@ -107,6 +107,26 @@
             }
         }
 
+        function toggleFullscreen() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+                const el = document.documentElement;
+                const req = el.requestFullscreen
+                    || el.webkitRequestFullscreen
+                    || el.mozRequestFullScreen
+                    || el.msRequestFullscreen;
+                if (req) req.call(el).catch(() => {});
+            } else {
+                const exit = document.exitFullscreen
+                    || document.webkitExitFullscreen
+                    || document.mozCancelFullScreen
+                    || document.msExitFullscreen;
+                if (exit) exit.call(document).catch(() => {});
+            }
+        }
+
+        // Permite alternar tela cheia com clique duplo em qualquer lugar
+        document.addEventListener('dblclick', toggleFullscreen);
+
         // Reexibe overlay se sair do fullscreen (ex: apertar botão voltar)
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement && isMobile) {
@@ -122,7 +142,7 @@
         overlay.addEventListener('click', enterFullscreen);
         overlay.addEventListener('touchend', (e) => { e.preventDefault(); enterFullscreen(); });
 
-        // Só mostra o overlay em dispositivos mobile
+        // Só mostra o overlay em dispositivos mobile ou TV
         if (isMobile) {
             document.body.appendChild(overlay);
         }

@@ -363,9 +363,9 @@ function normalizePromotion(item) {
 
     return {
         ...item,
-        id: item.id ?? cryptoRandomId(),
+        id: item.id != null ? item.id : cryptoRandomId(),
         nome_produto: normalizeText(item.nome_produto || item.nome || 'Produto em oferta'),
-        preco_anterior: item.preco_anterior ?? null,
+        preco_anterior: item.preco_anterior != null ? item.preco_anterior : null,
         preco_atual: isNaN(currentPrice) ? 0 : currentPrice,
         link_imagem: String(item.link_imagem || '').trim(),
         data_validade: String(item.data_validade || '').trim(),
