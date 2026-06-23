@@ -52,6 +52,28 @@ A aplicacao abre por padrao em:
 - Painel admin: `http://localhost:3000/config`
 - Login admin: `http://localhost:3000/login`
 
+## Como Alterar a Porta do Servidor
+
+Por padrão, a aplicação roda na porta `3000`. Se você precisar alterar essa porta (por exemplo, para rodar na porta `8080`), siga o passo a passo abaixo:
+
+1. **Abra o arquivo `.env`** na raiz do projeto.
+2. **Localize a linha que define a porta**:
+   ```env
+   PORT=3000
+   ```
+3. **Altere o valor** de `3000` para a porta desejada (ex: `PORT=8080`).
+4. **Salve o arquivo**.
+5. **Reinicie o servidor**:
+   - **Se estiver rodando via terminal**: Pare o processo atual (`Ctrl + C`) e inicie novamente com `npm start` ou `npm run dev`.
+   - **Se estiver rodando como Serviço do Windows**:
+     - Abra o menu Iniciar, digite `Serviços` (ou abra `services.msc`) e localize o serviço **HUB - Tela Promo**. Clique com o botão direito e selecione **Reiniciar**.
+     - *Ou*, via PowerShell (como Administrador), execute o comando:
+       ```powershell
+       Restart-Service -Name "HUB - Tela Promo"
+       ```
+
+A partir disso, os links de acesso serão ajustados para a nova porta configurada (ex: `http://localhost:8080/`).
+
 ## Dados esperados
 
 A API `/api/promocoes` espera produtos com estas colunas:
