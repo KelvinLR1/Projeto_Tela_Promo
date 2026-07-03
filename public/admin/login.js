@@ -7,6 +7,12 @@ function setupTransitions() {
         document.body.classList.add('page-loaded');
     });
 
+    // Garante que a transição de saída seja limpa se voltarmos à página pelo histórico (bfcache)
+    window.addEventListener('pageshow', () => {
+        document.body.classList.remove('page-exit');
+        document.body.classList.add('page-loaded');
+    });
+
     // Captura o link de voltar
     const backLink = document.querySelector('.back-link');
     if (backLink) {

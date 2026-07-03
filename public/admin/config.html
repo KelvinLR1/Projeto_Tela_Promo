@@ -15,7 +15,10 @@
             <div style="display: flex; align-items: center; gap: 20px;">
                 <img src="/logo.png" alt="Logo" class="topbar-logo" style="height: 60px; width: auto; object-fit: contain; flex-shrink: 0;">
                 <div>
-                    <p class="eyebrow">Painel administrativo</p>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                        <p class="eyebrow" style="margin-bottom: 0;">Painel administrativo</p>
+                        <span id="userRoleBadge" class="role-badge" style="display: none;">Carregando...</span>
+                    </div>
                     <h1>Configuracoes da tela</h1>
                     <p class="subtitle">Ajuste conexao, visual e links de exibicao em um unico lugar.</p>
                 </div>
@@ -146,7 +149,7 @@
 
                                 <div class="field">
                                     <label for="dbQuery">Consulta SQL</label>
-                                    <textarea id="dbQuery" rows="8" placeholder="SELECT nome_produto, preco_anterior, preco_atual, link_imagem, data_validade FROM promocoes"></textarea>
+                                    <textarea id="dbQuery" rows="8" placeholder="SELECT nome_produto, preco_anterior, preco_atual, unidade, link_imagem, data_validade FROM promocoes"></textarea>
                                 </div>
 
                                 <div class="sql-hint">
@@ -200,6 +203,15 @@
                                                         <span class="tipo-tag tipo-tag-pack">pack</span>
                                                         <span class="tipo-tag tipo-tag-unit">unitario</span>
                                                     </div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>unidade</code></td>
+                                                <td>TEXT</td>
+                                                <td><span class="badge-opt">Opcional</span></td>
+                                                <td>
+                                                    Unidade de medida (ex: <code>UN</code>, <code>KG</code>, <code>L</code>, <code>FD</code>, <code>CX</code>) — se informado, aparece ao lado do preço.
+                                                    <div class="tipo-tags"><span class="tipo-tag tipo-tag-todos">Todos os tipos</span></div>
                                                 </td>
                                             </tr>
                                             <tr>

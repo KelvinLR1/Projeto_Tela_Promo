@@ -66,16 +66,28 @@ function signPayload(payload) {
     .digest('base64url');
 }
 
-function createSessionToken(username) {
+function createSessionToken(username, role) {
   const now = Math.floor(Date.now() / 1000);
   const payload = base64UrlEncode(JSON.stringify({
     sub: username,
+    role: role || 'admin',
     iat: now,
     exp: now + SESSION_TTL_SECONDS
   }));
   const signature = signPayload(payload);
   return `${payload}.${signature}`;
 }
+
+function getSessionFromToken(token) {
+  if (!isValidSessionToken(token)) return null;
+  try {
+    const [payload] = token.split('.');
+    return JSON.parse(base64UrlDecode(payload));
+  } catch (err) {
+    return null;
+  }
+}
+
 
 function isValidSessionToken(token) {
   if (!token || !token.includes('.')) return false;
@@ -212,6 +224,15 @@ function cookieAuth(req, res, next) {
   res.redirect('/login');
 }
 
+function adminOnly(req, res, next) {
+  const cookies = parseCookies(req);
+  const session = getSessionFromToken(cookies[SESSION_COOKIE_NAME]);
+  if (session && session.role === 'admin') {
+    return next();
+  }
+  return res.status(403).json({ success: false, error: 'Acesso negado: Requer privilégios de Administrador.' });
+}
+
 // Serve os arquivos estaticos da tela publica e do painel admin.
 app.get('/', (req, res) => {
   res.sendFile(path.join(DISPLAY_DIR, 'index.html'));
@@ -314,7 +335,8 @@ async function getDbConnection() {
       } else {
         config.port = parseInt(process.env.DB_PORT) || 1433;
       }
-      dbPool = await mssql.connect(config);
+      const pool = new mssql.ConnectionPool(config);
+      dbPool = await pool.connect();
       console.log('◇ [DB] Conexão SQL Server inicializada com sucesso!');
     } else {
       console.warn(`◇ [DB] Tipo de banco de dados "${dbType}" não reconhecido. Usando dados MOCK.`);
@@ -372,19 +394,38 @@ function processProductRows(rows) {
       let found = false;
       for (const item of searchDirs) {
         for (const ext of extensions) {
-          const fileName = `${productId}${ext}`;
-          const fullPath = path.join(item.dir, fileName);
-          if (fs.existsSync(fullPath)) {
-            if (item.isCustom) {
-              link = `/api/local-image?path=${encodeURIComponent(fullPath)}`;
-              console.log(`   -> Encontrado na pasta customizada: "${fullPath}"`);
-            } else {
-              link = `/imagens/${fileName}`;
-              console.log(`   -> Encontrado na pasta padrão do projeto: "${fullPath}"`);
+          // Busca primeiro com o sufixo "_0" (padrão ERP) e depois sem sufixo como fallback
+          const fileNames = [`${productId}_0${ext}`, `${productId}${ext}`];
+          for (const fileName of fileNames) {
+            // Caminho 1: Dentro da subpasta com o ID do produto (padrão ERP de subpastas por ID)
+            const subfolderPath = path.join(item.dir, productId, fileName);
+            // Caminho 2: Diretamente na pasta raiz do caminho pesquisado
+            const rootPath = path.join(item.dir, fileName);
+
+            let chosenPath = '';
+            let isSubfolder = false;
+
+            if (fs.existsSync(subfolderPath)) {
+              chosenPath = subfolderPath;
+              isSubfolder = true;
+            } else if (fs.existsSync(rootPath)) {
+              chosenPath = rootPath;
+              isSubfolder = false;
             }
-            found = true;
-            break;
+
+            if (chosenPath) {
+              if (item.isCustom) {
+                link = `/api/local-image?path=${encodeURIComponent(chosenPath)}`;
+                console.log(`   -> Encontrado na pasta customizada: "${chosenPath}"`);
+              } else {
+                link = isSubfolder ? `/imagens/${productId}/${fileName}` : `/imagens/${fileName}`;
+                console.log(`   -> Encontrado na pasta padrão do projeto: "${chosenPath}"`);
+              }
+              found = true;
+              break;
+            }
           }
+          if (found) break;
         }
         if (found) break;
       }
@@ -435,6 +476,9 @@ function processProductRows(rows) {
       return str;
     };
 
+    const rawUnidade = r.unidade ?? r.un_medida ?? r.embalagem ?? r.und ?? '';
+    const unidade = typeof rawUnidade === 'string' ? rawUnidade.trim().toUpperCase() : '';
+
     return {
       ...r,
       id: r.id ?? productId,
@@ -442,6 +486,7 @@ function processProductRows(rows) {
       link_imagem: link,
       preco_atual: precoAtual,
       preco_anterior: precoAnterior,
+      unidade: unidade,
       data_validade: formatDate(r.data_validade ?? r.validade),
       data_inicio: r.data_inicio !== undefined ? formatDate(r.data_inicio) : undefined,
       data_fim: r.data_fim !== undefined ? formatDate(r.data_fim) : undefined
@@ -521,34 +566,34 @@ app.get('/api/promocoes', async (req, res) => {
 
     // Retorna 16 produtos falsos (MOCK) se o banco não estiver configurado
     const mockProdutos = [
-      { id: 1, nome_produto: "Arroz Branco Tipo 1 5kg Premium", preco_anterior: 25.90, preco_atual: 19.99, link_imagem: "https://loremflickr.com/400/400/rice,package/all", data_validade: "2026-12-31", texto_validade: "OFERTA DA SEMANA" },
-      { id: 2, nome_produto: "Feijão Carioca 1kg", preco_anterior: 8.50, preco_atual: 5.99, link_imagem: "", data_validade: "2026-12-31", texto_validade: "SÓ NESTA QUARTA" },
-      { id: 3, nome_produto: "Óleo de Soja 900ml", preco_anterior: null, preco_atual: 5.49, link_imagem: "https://loremflickr.com/400/400/oil,bottle/all", data_validade: "2026-12-31", texto_validade: "SÓ HOJE!" },
-      { id: 4, nome_produto: "Café Torrado e Moído 500g", preco_anterior: 18.90, preco_atual: 14.50, link_imagem: "https://loremflickr.com/400/400/coffee,bag/all", data_validade: "2026-12-31", texto_validade: "DURANTE O HAPPY HOUR" },
-      { id: 5, nome_produto: "Açúcar Refinado 1kg", preco_anterior: 4.80, preco_atual: 3.99, link_imagem: "https://loremflickr.com/400/400/sugar/all", data_validade: todayStr },
-      { id: 6, nome_produto: "Leite Integral 1L", preco_anterior: 5.50, preco_atual: 4.29, link_imagem: "https://loremflickr.com/400/400/milk,carton/all", data_validade: tomorrowStr },
-      { id: 7, nome_produto: "Macarrão Espaguete Sêmola 500g", preco_anterior: 4.50, preco_atual: 2.99, link_imagem: "https://loremflickr.com/400/400/pasta,spaghetti/all", data_validade: "2026-12-31", texto_validade: "SÓ SEXTA E SÁBADO" },
-      { id: 8, nome_produto: "Detergente Líquido Neutro 500ml", preco_anterior: 2.50, preco_atual: 1.89, link_imagem: "https://loremflickr.com/400/400/detergent,soap/all", data_validade: "2026-12-31", texto_validade: "DAS 8h ÀS 12h" },
-      { id: 9, nome_produto: "Sabão em Pó Premium 1kg", preco_anterior: 15.90, preco_atual: 11.99, link_imagem: "https://loremflickr.com/400/400/detergent,box/all", data_validade: "2026-12-31", texto_validade: "LEVE 3 PAGUE 2" },
-      { id: 10, nome_produto: "Cerveja Pilsen Lata 350ml", preco_anterior: 3.89, preco_atual: 2.79, link_imagem: "https://loremflickr.com/400/400/beer,can/all", data_validade: "2026-12-31", texto_validade: "FIM DE SEMANA" },
-      { id: 11, nome_produto: "Refrigerante Cola 2L Original", preco_anterior: 9.90, preco_atual: 7.99, link_imagem: "https://loremflickr.com/400/400/soda,bottle/all", data_validade: "2026-12-31" },
-      { id: 12, nome_produto: "Biscoito Recheado Chocolate 130g", preco_anterior: 3.20, preco_atual: 2.19, link_imagem: "https://loremflickr.com/400/400/cookie,chocolate/all", data_validade: "2026-12-31" },
-      { id: 13, nome_produto: "Manteiga com Sal Pote 200g", preco_anterior: 12.50, preco_atual: 9.89, link_imagem: "https://loremflickr.com/400/400/butter/all", data_validade: "2026-12-31" },
-      { id: 14, nome_produto: "Creme de Leite Leve TP 200g", preco_anterior: 3.90, preco_atual: 2.79, link_imagem: "https://loremflickr.com/400/400/cream,carton/all", data_validade: "2026-12-31" },
-      { id: 15, nome_produto: "Sabonete em Barra 90g Fragrâncias", preco_anterior: 2.80, preco_atual: 1.99, link_imagem: "https://loremflickr.com/400/400/soap,bar/all", data_validade: "2026-12-31" },
-      { id: 16, nome_produto: "Creme Dental Tripla Ação 90g", preco_anterior: 4.50, preco_atual: 3.29, link_imagem: "https://loremflickr.com/400/400/toothpaste/all", data_validade: "2026-12-31" }
+      { id: 1, nome_produto: "Arroz Branco Tipo 1 5kg Premium", preco_anterior: 25.90, preco_atual: 19.99, link_imagem: "https://loremflickr.com/400/400/rice,package/all", data_validade: "2026-12-31", texto_validade: "OFERTA DA SEMANA", unidade: "un" },
+      { id: 2, nome_produto: "Feijão Carioca 1kg", preco_anterior: 8.50, preco_atual: 5.99, link_imagem: "", data_validade: "2026-12-31", texto_validade: "SÓ NESTA QUARTA", unidade: "un" },
+      { id: 3, nome_produto: "Óleo de Soja 900ml", preco_anterior: null, preco_atual: 5.49, link_imagem: "https://loremflickr.com/400/400/oil,bottle/all", data_validade: "2026-12-31", texto_validade: "SÓ HOJE!", unidade: "un" },
+      { id: 4, nome_produto: "Café Torrado e Moído 500g", preco_anterior: 18.90, preco_atual: 14.50, link_imagem: "https://loremflickr.com/400/400/coffee,bag/all", data_validade: "2026-12-31", texto_validade: "DURANTE O HAPPY HOUR", unidade: "un" },
+      { id: 5, nome_produto: "Banana Prata Climatizada", preco_anterior: 8.50, preco_atual: 5.99, link_imagem: "https://loremflickr.com/400/400/banana/all", data_validade: todayStr, unidade: "kg" },
+      { id: 6, nome_produto: "Leite Integral 1L", preco_anterior: 5.50, preco_atual: 4.29, link_imagem: "https://loremflickr.com/400/400/milk,carton/all", data_validade: tomorrowStr, unidade: "un" },
+      { id: 7, nome_produto: "Macarrão Espaguete Sêmola 500g", preco_anterior: 4.50, preco_atual: 2.99, link_imagem: "https://loremflickr.com/400/400/pasta,spaghetti/all", data_validade: "2026-12-31", texto_validade: "SÓ SEXTA E SÁBADO", unidade: "un" },
+      { id: 8, nome_produto: "Detergente Líquido Neutro 500ml", preco_anterior: 2.50, preco_atual: 1.89, link_imagem: "https://loremflickr.com/400/400/detergent,soap/all", data_validade: "2026-12-31", texto_validade: "DAS 8h ÀS 12h", unidade: "un" },
+      { id: 9, nome_produto: "Tomate Italiano Selecionado", preco_anterior: 10.90, preco_atual: 7.99, link_imagem: "https://loremflickr.com/400/400/tomato/all", data_validade: "2026-12-31", texto_validade: "LEVE 3 PAGUE 2", unidade: "kg" },
+      { id: 10, nome_produto: "Cerveja Pilsen Lata 350ml", preco_anterior: 3.89, preco_atual: 2.79, link_imagem: "https://loremflickr.com/400/400/beer,can/all", data_validade: "2026-12-31", texto_validade: "FIM DE SEMANA", unidade: "un" },
+      { id: 11, nome_produto: "Refrigerante Cola 2L Original", preco_anterior: 9.90, preco_atual: 7.99, link_imagem: "https://loremflickr.com/400/400/soda,bottle/all", data_validade: "2026-12-31", unidade: "un" },
+      { id: 12, nome_produto: "Biscoito Recheado Chocolate 130g", preco_anterior: 3.20, preco_atual: 2.19, link_imagem: "https://loremflickr.com/400/400/cookie,chocolate/all", data_validade: "2026-12-31", unidade: "un" },
+      { id: 13, nome_produto: "Manteiga com Sal Pote 200g", preco_anterior: 12.50, preco_atual: 9.89, link_imagem: "https://loremflickr.com/400/400/butter/all", data_validade: "2026-12-31", unidade: "un" },
+      { id: 14, nome_produto: "Creme de Leite Leve TP 200g", preco_anterior: 3.90, preco_atual: 2.79, link_imagem: "https://loremflickr.com/400/400/cream,carton/all", data_validade: "2026-12-31", unidade: "un" },
+      { id: 15, nome_produto: "Sabonete em Barra 90g Fragrâncias", preco_anterior: 2.80, preco_atual: 1.99, link_imagem: "https://loremflickr.com/400/400/soap,bar/all", data_validade: "2026-12-31", unidade: "un" },
+      { id: 16, nome_produto: "Creme Dental Tripla Ação 90g", preco_anterior: 4.50, preco_atual: 3.29, link_imagem: "https://loremflickr.com/400/400/toothpaste/all", data_validade: "2026-12-31", unidade: "un" }
     ];
     mockProdutos.unshift(
       // Tipo: preco_fixo (padrão)
-      { id: 101, nome_produto: "Arroz Branco Tipo 1 5kg", preco_anterior: 25.90, preco_atual: 19.99, link_imagem: "https://loremflickr.com/400/400/rice,package/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'preco_fixo' },
+      { id: 101, nome_produto: "Arroz Branco Tipo 1 5kg", preco_anterior: 25.90, preco_atual: 19.99, link_imagem: "https://loremflickr.com/400/400/rice,package/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'preco_fixo', unidade: 'un' },
       // Tipo: leva_paga
-      { id: 102, nome_produto: "Sabonete Dove 90g", preco_anterior: null, preco_atual: 3.99, link_imagem: "https://loremflickr.com/400/400/soap,bar/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'leva_paga', qtd_leva: 3, qtd_paga: 2 },
+      { id: 102, nome_produto: "Sabonete Dove 90g", preco_anterior: null, preco_atual: 3.99, link_imagem: "https://loremflickr.com/400/400/soap,bar/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'leva_paga', qtd_leva: 3, qtd_paga: 2, unidade: 'un' },
       // Tipo: desconto
-      { id: 103, nome_produto: "Shampoo Premium 400ml", preco_anterior: 18.90, preco_atual: 17.01, link_imagem: "https://loremflickr.com/400/400/shampoo,bottle/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'desconto', percentual_desconto: 10, qtd_minima: 3, condicao_qty: 'a_cada' },
+      { id: 103, nome_produto: "Shampoo Premium 400ml", preco_anterior: 18.90, preco_atual: 17.01, link_imagem: "https://loremflickr.com/400/400/shampoo,bottle/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'desconto', percentual_desconto: 10, qtd_minima: 3, condicao_qty: 'a_cada', unidade: 'un' },
       // Tipo: pack
-      { id: 104, nome_produto: "Refresco XXX 1L", preco_anterior: 12.00, preco_atual: 9.99, link_imagem: "https://loremflickr.com/400/400/juice,bottle/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'pack', qtd_pack: 3 },
+      { id: 104, nome_produto: "Refresco XXX 1L", preco_anterior: 12.00, preco_atual: 9.99, link_imagem: "https://loremflickr.com/400/400/juice,bottle/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'pack', qtd_pack: 3, unidade: 'un' },
       // Tipo: unitario
-      { id: 105, nome_produto: "Sabonete Líquido Refil 200ml", preco_anterior: 7.50, preco_atual: 5.99, link_imagem: "https://loremflickr.com/400/400/soap,liquid/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'unitario', qtd_minima: 3, condicao_qty: 'a_partir' }
+      { id: 105, nome_produto: "Sabonete Líquido Refil 200ml", preco_anterior: 7.50, preco_atual: 5.99, link_imagem: "https://loremflickr.com/400/400/soap,liquid/all", data_inicio: todayStr, data_fim: nextWeekStr, tipo_promo: 'unitario', qtd_minima: 3, condicao_qty: 'a_partir', unidade: 'un' }
     );
 
     res.json(mockProdutos);
@@ -620,9 +665,15 @@ app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   const expectedUser = process.env.ADMIN_USER || 'admin';
   const expectedPass = process.env.ADMIN_PASS || 'admin123';
+  const expectedVisualUser = process.env.VISUAL_USER || 'marketing';
+  const expectedVisualPass = process.env.VISUAL_PASS || 'marketing123';
 
   if (username === expectedUser && password === expectedPass) {
-    const token = createSessionToken(username);
+    const token = createSessionToken(username, 'admin');
+    res.setHeader('Set-Cookie', buildSessionCookie(token, req));
+    return res.json({ success: true, message: 'Autenticação realizada!' });
+  } else if (username === expectedVisualUser && password === expectedVisualPass) {
+    const token = createSessionToken(username, 'visual');
     res.setHeader('Set-Cookie', buildSessionCookie(token, req));
     return res.json({ success: true, message: 'Autenticação realizada!' });
   }
@@ -634,6 +685,20 @@ app.post('/api/login', (req, res) => {
 app.post('/api/logout', (req, res) => {
   res.setHeader('Set-Cookie', buildSessionCookie('', req, 0));
   res.json({ success: true, message: 'Sessão encerrada com sucesso!' });
+});
+
+// Retorna dados do usuário autenticado na sessão ativa
+app.get('/api/auth/me', (req, res) => {
+  const cookies = parseCookies(req);
+  const session = getSessionFromToken(cookies[SESSION_COOKIE_NAME]);
+  if (session) {
+    return res.json({
+      success: true,
+      username: session.sub,
+      role: session.role || 'admin'
+    });
+  }
+  res.status(401).json({ success: false, error: 'Não autenticado' });
 });
 
 // Redirect para evitar acesso direto ao HTML estático sem autenticação
@@ -648,7 +713,7 @@ app.get('/config', cookieAuth, (req, res) => {
 });
 
 // Retorna as configurações atuais do arquivo .env
-app.get('/api/config/current', cookieAuth, (req, res) => {
+app.get('/api/config/current', cookieAuth, adminOnly, (req, res) => {
   res.json({
     dbType: process.env.DB_TYPE || 'mysql',
     host: process.env.DB_HOST || '127.0.0.1',
@@ -671,7 +736,7 @@ app.get('/api/config/display', cookieAuth, (req, res) => {
 });
 
 // Rota para testar conexão com o banco de dados temporariamente antes de salvar
-app.post('/api/config/test', cookieAuth, async (req, res) => {
+app.post('/api/config/test', cookieAuth, adminOnly, async (req, res) => {
   const { dbType, host, port, database, user, password, dbQuery, dbInstance } = req.body;
   const cleanedQuery = (dbQuery || '').trim();
   try {
@@ -721,7 +786,8 @@ app.post('/api/config/test', cookieAuth, async (req, res) => {
       } else {
         config.port = parseInt(port) || 1433;
       }
-      const conn = await mssql.connect(config);
+      const pool = new mssql.ConnectionPool(config);
+      const conn = await pool.connect();
       if (cleanedQuery) {
         await conn.request().query(cleanedQuery);
       }
@@ -759,7 +825,7 @@ function isSafeSelectQuery(query) {
   return true;
 }
 
-app.post('/api/config/test-query', cookieAuth, async (req, res) => {
+app.post('/api/config/test-query', cookieAuth, adminOnly, async (req, res) => {
   const { dbType, host, port, database, user, password, dbQuery, dbInstance } = req.body;
   const cleanedQuery = (dbQuery || '').trim();
   
@@ -791,7 +857,8 @@ app.post('/api/config/test-query', cookieAuth, async (req, res) => {
       const config = { user, password, server: host, database, options: { encrypt: false, trustServerCertificate: true }, connectionTimeout: 3000 };
       if (dbInstance) config.options.instanceName = dbInstance;
       else config.port = parseInt(port) || 1433;
-      const conn = await mssql.connect(config);
+      const pool = new mssql.ConnectionPool(config);
+      const conn = await pool.connect();
       defaultQuery = `SELECT TOP 10 id, nome_produto, preco_anterior, preco_atual, link_imagem, FORMAT(data_validade, 'yyyy-MM-dd') as data_validade FROM promocoes WHERE data_validade >= CAST(GETDATE() AS DATE)`;
       const result = await conn.request().query(cleanedQuery || defaultQuery);
       rows = result.recordset;
@@ -835,6 +902,8 @@ function buildEnvContent() {
     envLine('PORT', PORT),
     envLine('ADMIN_USER', process.env.ADMIN_USER || 'admin'),
     envLine('ADMIN_PASS', process.env.ADMIN_PASS || 'admin123'),
+    envLine('VISUAL_USER', process.env.VISUAL_USER || 'marketing'),
+    envLine('VISUAL_PASS', process.env.VISUAL_PASS || 'marketing123'),
     envLine('SESSION_SECRET', SESSION_SECRET),
     envLine('ALLOWED_ORIGINS', process.env.ALLOWED_ORIGINS || ''),
     '',
@@ -897,7 +966,7 @@ function saveEnvFile() {
   fs.writeFileSync(envPath, buildEnvContent());
 }
 
-app.post('/api/config/save', cookieAuth, async (req, res) => {
+app.post('/api/config/save', cookieAuth, adminOnly, async (req, res) => {
   const { dbType, host, port, dbInstance, database, user, password, dbQuery, dbMockFallback } = req.body;
   const cleanedQuery = (dbQuery || '').trim();
 

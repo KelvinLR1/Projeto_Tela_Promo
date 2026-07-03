@@ -45,6 +45,7 @@ SELECT
     END AS preco_atual,
     pp.id_produto AS id,
     p.preco_venda AS preco_anterior,
+    p.unidade AS unidade, -- Opcional: unidade de medida (ex: UN, KG, L)
     prodi.caminho_imagem AS link_imagem,
     CAST(NULL AS DATETIME) as data_validade,
     promo.data_inicial as data_inicio,
@@ -99,6 +100,7 @@ SELECT
     END AS preco_atual,
     pp.id_produto AS id,
     p.preco_venda_atacado AS preco_anterior,
+    p.unidade AS unidade, -- Opcional: unidade de medida (ex: UN, KG, L)
     prodi.caminho_imagem AS link_imagem,
     CAST(NULL AS DATETIME) as data_validade,
     promo.data_inicial as data_inicio,
@@ -159,6 +161,7 @@ SELECT
        WHEN promo.tipo > 1 AND promo.tipo_condicoes = 4 THEN p.preco_venda * ppd.quantidade
        ELSE NULL
     END AS preco_anterior,
+    p.unidade AS unidade, -- Opcional: unidade de medida (ex: UN, KG, L)
     prodi.caminho_imagem AS link_imagem,
     CAST(NULL AS DATETIME) as data_validade,
     promo.data_inicial as data_inicio,
@@ -229,6 +232,7 @@ SELECT
     p.preco_venda_atacado AS preco_atual,
     p.id_produto AS id,
     p.preco_venda AS preco_anterior,
+    p.unidade AS unidade, -- Opcional: unidade de medida (ex: UN, KG, L)
     prodi.caminho_imagem AS link_imagem,
     CAST(NULL AS DATETIME) as data_validade,
     CAST(NULL AS DATETIME) as data_inicio,
@@ -345,6 +349,14 @@ WHERE
     -- Preço fixo (padrão):
     'preco_fixo' AS tipo_promo,
     -- ou simplesmente: NULL AS tipo_promo
+
+    ═══════════════════════════════════════════════════════════════
+     UNIDADE DE MEDIDA — campo unidade
+    ═══════════════════════════════════════════════════════════════
+    O sistema suporta a exibição compacta de unidades de medida ao lado do preço.
+    Adicione o campo unidade (ou aliases mapeados no server.js: un_medida, und, embalagem).
+    Exemplos: 'KG', 'UN', 'L', 'FD', 'CX'.
+    Se omitido ou nulo, o preço será exibido sem sufixo de unidade.
 
     ═══════════════════════════════════════════════════════════════
      HIERARQUIA E PRIORIDADE DE EXIBIÇÃO DE VALIDADE / BADGES

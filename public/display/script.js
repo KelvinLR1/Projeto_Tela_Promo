@@ -156,12 +156,34 @@ function applyLayout(mode) {
     }
 }
 
+let wakeLock = null;
+
+async function requestWakeLock() {
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('◇ [WAKE LOCK] Bloqueio de suspensão ativo!');
+        }
+    } catch (err) {
+        console.warn(`◇ [WAKE LOCK] Falha ao solicitar bloqueio de suspensão: ${err.message}`);
+    }
+}
+
 async function init() {
     await fetchDisplayConfig(true);
     await fetchPromotions();
     schedulePromotionFetch();
     scheduleDisplayConfigFetch();
+    
+    // Solicita manter a tela ativa
+    requestWakeLock();
 }
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        requestWakeLock();
+    }
+});
 
 function schedulePromotionFetch() {
     if (fetchTimer) clearTimeout(fetchTimer);
@@ -339,6 +361,12 @@ function formatCurrency(value) {
     return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+function formatPriceHTML(price, unit) {
+    const formatted = formatCurrency(price);
+    if (!unit || unit.trim() === '') return formatted;
+    return `${formatted}<span class="price-unit">/${unit.trim().toLowerCase()}</span>`;
+}
+
 function normalizeText(value) {
     const text = String(value || '').trim();
     if (!/[ÃÂâ]/.test(text)) return text;
@@ -375,6 +403,7 @@ function normalizePromotion(item) {
         hora_inicio: String(item.hora_inicio || '').trim(),
         hora_fim: String(item.hora_fim || '').trim(),
         texto_validade: normalizeText(item.texto_validade || ''),
+        unidade: String(item.unidade || '').trim(),
         // Campos de tipo de promoção
         tipo_promo,
         qtd_leva: item.qtd_leva != null ? parseInt(item.qtd_leva, 10) : null,
@@ -903,12 +932,12 @@ function buildCardPrecoFixo(item) {
 
     const oldPriceEl = clone.querySelector('.old-price');
     if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
-        oldPriceEl.textContent = formatCurrency(item.preco_anterior);
+        oldPriceEl.innerHTML = formatPriceHTML(item.preco_anterior, item.unidade);
     } else {
         oldPriceEl.style.display = 'none';
     }
 
-    clone.querySelector('.new-price').textContent = formatCurrency(item.preco_atual);
+    clone.querySelector('.new-price').innerHTML = formatPriceHTML(item.preco_atual, item.unidade);
 
     // Retorna o fragmento como elemento
     const wrapper = document.createElement('div');
@@ -930,7 +959,7 @@ function buildCardLevaPaga(item) {
     if (item.preco_atual > 0) {
         const priceRow = document.createElement('div');
         priceRow.className = 'lp-price-row';
-        priceRow.innerHTML = `<span class="lp-unit-label">Preço unitário</span><span class="lp-unit-price">${formatCurrency(item.preco_atual)}</span>`;
+        priceRow.innerHTML = `<span class="lp-unit-label">Preço unitário</span><span class="lp-unit-price">${formatPriceHTML(item.preco_atual, item.unidade)}</span>`;
         info.appendChild(priceRow);
     }
 
@@ -1000,12 +1029,12 @@ function buildCardDesconto(item) {
     if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
         const old = document.createElement('span');
         old.className = 'old-price';
-        old.textContent = formatCurrency(item.preco_anterior);
+        old.innerHTML = formatPriceHTML(item.preco_anterior, item.unidade);
         prices.appendChild(old);
     }
     const newP = document.createElement('span');
     newP.className = 'new-price';
-    newP.textContent = formatCurrency(item.preco_atual);
+    newP.innerHTML = formatPriceHTML(item.preco_atual, item.unidade);
     prices.appendChild(newP);
     row.appendChild(prices);
 
@@ -1035,13 +1064,13 @@ function buildCardPack(item) {
 
     const priceBadge = document.createElement('div');
     priceBadge.className = 'pack-price-badge';
-    priceBadge.textContent = formatCurrency(item.preco_atual);
+    priceBadge.innerHTML = formatPriceHTML(item.preco_atual, item.unidade);
     info.appendChild(priceBadge);
 
     if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
         const old = document.createElement('div');
         old.className = 'pack-old-price';
-        old.textContent = `Antes: ${formatCurrency(item.preco_anterior)}`;
+        old.innerHTML = `Antes: ${formatPriceHTML(item.preco_anterior, item.unidade)}`;
         info.appendChild(old);
     }
 
@@ -1075,13 +1104,13 @@ function buildCardUnitario(item) {
 
     const priceBadge = document.createElement('div');
     priceBadge.className = 'unitario-price-badge';
-    priceBadge.textContent = formatCurrency(item.preco_atual);
+    priceBadge.innerHTML = formatPriceHTML(item.preco_atual, item.unidade);
     info.appendChild(priceBadge);
 
     if (item.preco_anterior && parseFloat(item.preco_anterior) > 0) {
         const old = document.createElement('div');
         old.className = 'unitario-old-price';
-        old.textContent = `Antes: ${formatCurrency(item.preco_anterior)}`;
+        old.innerHTML = `Antes: ${formatPriceHTML(item.preco_anterior, item.unidade)}`;
         info.appendChild(old);
     }
 
@@ -1382,6 +1411,12 @@ init();
 // Transição de entrada e captura de links
 function setupTransitions() {
     requestAnimationFrame(() => {
+        document.body.classList.add('page-loaded');
+    });
+
+    // Garante que a transição de saída seja limpa se voltarmos à página pelo histórico (bfcache)
+    window.addEventListener('pageshow', () => {
+        document.body.classList.remove('page-exit');
         document.body.classList.add('page-loaded');
     });
 

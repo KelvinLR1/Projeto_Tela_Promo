@@ -65,6 +65,12 @@
                 document.body.classList.add("page-loaded");
             });
 
+            // Garante que a transição de saída seja limpa se voltarmos à página pelo histórico (bfcache)
+            window.addEventListener("pageshow", () => {
+                document.body.classList.remove("page-exit");
+                document.body.classList.add("page-loaded");
+            });
+
             // Captura transição de saída para links
             document.querySelectorAll("a").forEach(link => {
                 if (

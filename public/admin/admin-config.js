@@ -478,13 +478,17 @@ modalOverlay.addEventListener('click', (e) => {
 document.getElementById('configForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const done = setButtonBusy(event.submitter, 'Salvando...');
-    showToast('Salvando todas as configurações...', 'info');
+    showToast('Salvando configurações...', 'info');
 
     try {
-        await Promise.all([
-            postJson('/api/config/save', getFormData()),
-            postJson('/api/config/display/save', getDisplayFormData())
-        ]);
+        if (userRole === 'admin') {
+            await Promise.all([
+                postJson('/api/config/save', getFormData()),
+                postJson('/api/config/display/save', getDisplayFormData())
+            ]);
+        } else {
+            await postJson('/api/config/display/save', getDisplayFormData());
+        }
         showToast('Todas as configurações foram salvas.', 'success');
         updateSummary();
     } catch (err) {
@@ -615,10 +619,71 @@ document.getElementById('btnRestoreDefaults').addEventListener('click', function
     }
 });
 
-initLayoutOptions();
-loadCurrentConfig();
-loadDisplayConfig();
-initLivePreviews();
+let userRole = 'admin';
+
+async function loadUserSessionAndAdaptUI() {
+    try {
+        const response = await fetch('/api/auth/me');
+        if (!response.ok) throw new Error('Não autenticado');
+        const data = await response.json();
+        
+        userRole = data.role || 'admin';
+        const badge = document.getElementById('userRoleBadge');
+        if (badge) {
+            badge.style.display = 'inline-block';
+            if (userRole === 'admin') {
+                badge.textContent = 'Administrador';
+                badge.className = 'role-badge role-admin';
+            } else {
+                badge.textContent = 'Marketing / Visual';
+                badge.className = 'role-badge role-visual';
+                adaptUIForVisualUser();
+            }
+        }
+    } catch (err) {
+        console.error('Falha ao obter sessão do usuário:', err);
+    }
+}
+
+function adaptUIForVisualUser() {
+    // 1. Ocultar abas do banco de dados e SQL
+    const tabDb = document.querySelector('[data-tab="database"]');
+    const tabSql = document.querySelector('[data-tab="sql"]');
+    if (tabDb) tabDb.style.display = 'none';
+    if (tabSql) tabSql.style.display = 'none';
+    
+    // 2. Ocultar card de resumo do banco
+    const summaryDb = document.getElementById('summaryDb');
+    if (summaryDb) {
+        const card = summaryDb.closest('.summary-card');
+        if (card) card.style.display = 'none';
+    }
+    
+    // 3. Ativar a primeira aba de aparência por padrão
+    const appTab = document.querySelector('[data-tab="appearance"]');
+    if (appTab) {
+        appTab.click();
+    }
+
+    // 4. Remover atributo required dos campos de banco que estão ocultos para evitar bloqueio de validação HTML5
+    const dbFields = ['dbType', 'host', 'port', 'database', 'user', 'dbMockFallback'];
+    dbFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.removeAttribute('required');
+    });
+}
+
+async function initDashboard() {
+    initLayoutOptions();
+    await loadUserSessionAndAdaptUI();
+    if (userRole === 'admin') {
+        await loadCurrentConfig();
+    }
+    await loadDisplayConfig();
+    initLivePreviews();
+}
+
+initDashboard();
 
 // Logica de alternancia de abas
 function initTabs() {
@@ -649,6 +714,12 @@ initTabs();
 // Transição de entrada e captura de links
 function setupTransitions() {
     requestAnimationFrame(() => {
+        document.body.classList.add('page-loaded');
+    });
+
+    // Garante que a transição de saída seja limpa se voltarmos à página pelo histórico (bfcache)
+    window.addEventListener('pageshow', () => {
+        document.body.classList.remove('page-exit');
         document.body.classList.add('page-loaded');
     });
 

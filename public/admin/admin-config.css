@@ -13,6 +13,32 @@
     --radius: 8px;
 }
 
+/* ── Role Badges ── */
+.role-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 12px;
+    letter-spacing: 1px;
+    line-height: 1;
+    vertical-align: middle;
+    transition: all 0.3s ease;
+}
+.role-admin {
+    background: rgba(124, 77, 255, 0.15);
+    border: 1px solid rgba(124, 77, 255, 0.4);
+    color: #b388ff;
+    box-shadow: 0 0 12px rgba(124, 77, 255, 0.2);
+}
+.role-visual {
+    background: rgba(0, 230, 118, 0.15);
+    border: 1px solid rgba(0, 230, 118, 0.4);
+    color: #b9f6ca;
+    box-shadow: 0 0 12px rgba(0, 230, 118, 0.2);
+}
+
 * {
     box-sizing: border-box;
 }

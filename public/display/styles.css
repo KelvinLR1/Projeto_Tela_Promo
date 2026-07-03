@@ -440,9 +440,6 @@ body {
     border-color: rgba(251, 192, 45, 0.4);
 }
 
-    margin-bottom: -0.5vh;
-}
-
 .new-price {
     color: var(--card-padrao-text-price, var(--promo-primary, #d32f2f));
     font-size: 7.5vh;
@@ -1124,7 +1121,7 @@ body.page-exit {
 }
 .card-desconto .product-name { color: var(--card-desc-text-name, #1a1a1a); }
 .desc-row { display: flex; align-items: center; margin-top: 0.5vh; }
-.desc-row > *:not(:last-child) { margin-right: 1.2vw; }
+.desc-row > *:not(:last-child) { margin-right: 0.8vw; }
 .desc-pct-badge {
     display: flex;
     flex-direction: column;
@@ -1132,16 +1129,16 @@ body.page-exit {
     justify-content: center;
     background: var(--card-desc-badge-bg, #d32f2f);
     border-radius: 14px;
-    padding: 0.8vh 1.1vw;
-    min-width: 4.5vw;
+    padding: 0.6vh 0.8vw;
+    min-width: 3.8vw;
     animation: pulseBadge 2.5s ease-in-out infinite;
     flex-shrink: 0;
 }
-.desc-pct-num  { font-size: 5vh; font-weight: 900; color: var(--card-desc-badge-text, #fff); line-height: 1; }
+.desc-pct-num  { font-size: 4.5vh; font-weight: 900; color: var(--card-desc-badge-text, #fff); line-height: 1; }
 .desc-pct-label{ font-size: 1.3vh; font-weight: 800; color: var(--card-desc-badge-text, rgba(255,255,255,0.9)); text-transform: uppercase; }
 .desc-prices { display: flex; flex-direction: column; }
 .desc-prices .old-price { font-size: 2.6vh; color: #999; }
-.desc-prices .new-price { font-size: 6.5vh; color: var(--card-desc-new-price, var(--promo-primary, #d32f2f)); }
+.desc-prices .new-price { font-size: 5.8vh; color: var(--card-desc-new-price, var(--promo-primary, #d32f2f)); }
 .desc-qty-cond {
     font-size: 1.7vh;
     font-weight: 700;
@@ -1441,3 +1438,14 @@ body.page-exit {
 .layout-sem-foto-destaque .unitario-each-label { font-size: 3vh; }
 .layout-sem-foto-destaque .unitario-price-badge{ font-size: 16vh; }
 .layout-sem-foto-destaque .unitario-old-price  { font-size: 3vh; }
+
+/* ── SUFIXO DE UNIDADE DE PREÇO (KG, UN, L) ── */
+.price-unit {
+    display: inline-block;
+    font-size: 0.32em;
+    font-weight: 600;
+    opacity: 0.75;
+    margin-left: 3px;
+    text-transform: lowercase;
+    vertical-align: middle;
+}
